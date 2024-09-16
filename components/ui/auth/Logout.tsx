@@ -1,5 +1,5 @@
 // components/Logout.tsx
-import { supabase } from '@/lib/supabaseClient'
+import { supabase } from '@/lib/supabase-client'
 import { useRouter } from 'next/router'
 
 export default function Logout() {

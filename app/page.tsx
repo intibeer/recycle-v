@@ -1,19 +1,17 @@
 "use client";  // Add this at the top
 
 import React, { useState } from 'react';
-import HeaderNav from '../components/ui/HeaderNav';
 import CookieConsent, { getCookieConsentValue, Cookies } from "react-cookie-consent";
-import Script from 'next/script';
 import Component from '../hooks/used-object-search';
-import Link from 'next/link';
+import Script from "next/script";
 
 const Home = () => {
-  const [consent, setConsent] = useState(getCookieConsentValue());
+  const [consent, setConsent] = useState<string | undefined>(getCookieConsentValue()); // Ensure it's string or undefined
   const [isVisible, setIsVisible] = useState(true);
   const [isChatOpen, setIsChatOpen] = useState(false); // Controls the chat popup visibility
 
   const handleAccept = () => {
-    setConsent(true);
+    setConsent("true"); // Set consent as a string value
   };
 
   const handleClose = () => {
@@ -21,7 +19,7 @@ const Home = () => {
   };
 
   const handleReject = () => {
-    setConsent(false);
+    setConsent("false"); // Set consent as a string value
     Cookies.remove("userConsentForCookies");
   };
 
@@ -47,6 +45,26 @@ const Home = () => {
       >
         This website uses cookies to enhance the user experience.
       </CookieConsent>
+      {consent === "true" && 
+      <>
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-MK0WETNJGT"
+          strategy="afterInteractive"
+        />
+        <Script
+          id="google-analytics"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-MK0WETNJGT');
+            `,
+          }}
+        /> 
+      </>
+      }
 
       {/* Floating button that toggles chat */}
       {isVisible && (

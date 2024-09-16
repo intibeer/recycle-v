@@ -21,6 +21,6 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "components/ui/HeaderNav.jsx", "hooks/used-object-search.jsx", "hooks/used-object-search.jsx"],
   "exclude": ["node_modules"]
 }

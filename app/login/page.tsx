@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Github, Mail } from "lucide-react"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
 export default function LoginPage() {
@@ -51,22 +50,6 @@ export default function LoginPage() {
     setLoading(false)
   }
 
-  const handleSocialLogin = async (provider: 'github' | 'google') => {
-    setLoading(true)
-    setMessage(null)
-
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo: `${window.location.origin}/dashboard`,  // Redirects to /dashboard after OAuth login
-      },
-    })
-
-    if (error) {
-      setMessage({ type: 'error', text: error.message })
-      setLoading(false)
-    }
-  }
 
   return (
     <div className="flex items-center justify-center pt-20">

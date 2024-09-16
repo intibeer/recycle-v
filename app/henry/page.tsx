@@ -3,11 +3,7 @@
 import React, { useState, useEffect } from 'react';
 
 
-export const title = 'Henry The Recycling Bear';
-export const description =
-  'Ask the Henry, the recycling bear a question about recycling.';
-
-export default function IframeLoader() {
+export default function Henry() {
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {

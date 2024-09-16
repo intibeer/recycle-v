@@ -1,12 +1,13 @@
 // pages/_app.tsx
-import { AuthProvider } from '../lib/AuthContext'
+import { AppProps } from 'next/app'; // Import AppProps type
+import { AuthProvider } from '../lib/AuthContext';
 
-function MyApp({ Component, pageProps }) {
+function MyApp({ Component, pageProps }: AppProps) { // Add types to Component and pageProps
   return (
     <AuthProvider>
       <Component {...pageProps} />
     </AuthProvider>
-  )
+  );
 }
 
-export default MyApp
+export default MyApp;

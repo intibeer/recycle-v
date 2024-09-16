@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Checkbox } from "@/components/ui/checkbox" // Import for Checkbox component
 
 type UsedItem = {
   post_id: string
@@ -23,12 +24,14 @@ export default function Dashboard() {
   const [items, setItems] = useState<UsedItem[]>([])
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
-  const [price, setPrice] = useState('')
+  const [price, setPrice] = useState<number | ''>('') // Updated to be a number or empty string
   const [location, setLocation] = useState('')
   const [image, setImage] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
+  const [termsAgreed, setTermsAgreed] = useState(false) // State for terms checkbox
+  const [locationSuggestions, setLocationSuggestions] = useState<any[]>([]) // Store location suggestions
 
   const router = useRouter()
   const supabase = createClientComponentClient()
@@ -71,6 +74,12 @@ export default function Dashboard() {
       return
     }
 
+    if (!termsAgreed) {
+      setMessage({ type: 'error', text: 'You must agree to the terms and conditions' })
+      setLoading(false)
+      return
+    }
+
     let image_url = ''
     if (image) {
       const fileExt = image.name.split('.').pop()
@@ -97,7 +106,7 @@ export default function Dashboard() {
       name,
       description,
       image_url,
-      price,
+      price: price.toString(), // Ensure price is stored as string
       location,
       site: `recycle.co.uk${userId}`,
       date: new Date().toISOString(),
@@ -112,11 +121,23 @@ export default function Dashboard() {
       setPrice('')
       setLocation('')
       setImage(null)
+      setTermsAgreed(false) // Reset terms checkbox
       fetchItems(userId)
     }
 
     setLoading(false)
   }
+
+  const handleLocationSearch = async (query: string) => {
+    try {
+      if (query.length < 3) return; // Only search if at least 3 characters are typed
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&addressdetails=1&limit=5`);
+      const data = await response.json();
+      setLocationSuggestions(data); // Update location suggestions
+    } catch (error) {
+      console.error('Error fetching location:', error);
+    }
+  };
 
   return (
     <div className="container mx-auto p-4">
@@ -129,7 +150,7 @@ export default function Dashboard() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
+                <Label htmlFor="name">Item Name</Label>
                 <Input
                   id="name"
                   value={name}
@@ -138,7 +159,7 @@ export default function Dashboard() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description">Item Description</Label>
                 <Input
                   id="description"
                   value={description}
@@ -147,25 +168,38 @@ export default function Dashboard() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="price">Price</Label>
+                <Label htmlFor="price">Item Price (GBP)</Label>
                 <Input
                   id="price"
+                  type="number"
+                  min="0"
+                  step="0.01"
                   value={price}
-                  onChange={(e) => setPrice(e.target.value)}
+                  onChange={(e) => setPrice(Number(e.target.value))}
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="location">Location</Label>
+                <Label htmlFor="location">Your Location</Label>
                 <Input
                   id="location"
                   value={location}
-                  onChange={(e) => setLocation(e.target.value)}
+                  onChange={(e) => {
+                    setLocation(e.target.value)
+                    handleLocationSearch(e.target.value) // Trigger location search
+                  }}
+                  placeholder="Enter location"
                   required
+                  list="location-options"
                 />
+                <datalist id="location-options">
+                  {locationSuggestions.map((suggestion, index) => (
+                    <option key={index} value={suggestion.display_name} />
+                  ))}
+                </datalist>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="image">Image</Label>
+                <Label htmlFor="image">Item Image</Label>
                 <Input
                   id="image"
                   type="file"
@@ -173,7 +207,17 @@ export default function Dashboard() {
                   accept="image/*"
                 />
               </div>
-              <Button type="submit" disabled={loading}>
+              <div className="space-y-2">
+                <Checkbox
+                  id="terms"
+                  checked={termsAgreed}
+                  onCheckedChange={() => setTermsAgreed(!termsAgreed)}
+                />
+                <Label htmlFor="terms" className='ml-2'>
+                  I agree to the <a href="/terms-of-use" className="underline text-blue-500">terms and conditions</a>
+                </Label>
+              </div>
+              <Button type="submit" disabled={loading} className='text-white font-extrabold tracking-tighter'>
                 {loading ? 'Adding...' : 'Add Item'}
               </Button>
             </form>
@@ -189,11 +233,11 @@ export default function Dashboard() {
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Your Items</CardTitle>
+            <CardTitle>Your Listed Items</CardTitle>
             <CardDescription>List of your posted items</CardDescription>
           </CardHeader>
           <CardContent>
-
+            {items.map(item => (<p key={item.post_id}>{item.name}</p>))}
           </CardContent>
         </Card>
       </div>

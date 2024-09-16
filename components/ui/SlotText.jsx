@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import Image from 'next/image'; // Import Next.js Image component
 
 const styles = {
   slotMachineRecipeMask: {
@@ -28,11 +29,11 @@ const styles = {
 
 // Define image paths for each word
 const wordImages = {
-  'Gumtree.com': 'gumtree.png',
-  'Freecycle.org': 'freecycle.png',
-  'Preloved.co.uk': 'preloved.png',
-  'Facebook': 'facebook.png',
-  'Ebay': 'ebay.png',
+  'Gumtree.com': '/gumtree.png',
+  'Freecycle.org': '/freecycle.png',
+  'Preloved.co.uk': '/preloved.png',
+  'Facebook': '/facebook.png',
+  'Ebay': '/ebay.png',
 };
 
 function buildSlotItem(imageSrc, altText) {
@@ -41,14 +42,12 @@ function buildSlotItem(imageSrc, altText) {
       key={altText}
       className='min-h-[100px] max-h-[100px] m-0 p-0 bg-contain flex items-center justify-center'
     > 
-      <img
+      <Image
         src={imageSrc}
         alt={altText}
-        style={{
-          width: '100px',
-          height: '100px',
-          objectFit: 'contain',
-        }}
+        width={100}
+        height={100}
+        style={{ objectFit: 'contain' }}
       />
     </div>
   );
@@ -56,7 +55,6 @@ function buildSlotItem(imageSrc, altText) {
 
 function SlotText() {
   const [items, setItems] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
   const containerRef = useRef(null);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -87,7 +85,7 @@ function SlotText() {
 
       return () => clearInterval(intervalId);
     }
-  }, [isMobile, currentIndex]);
+  }, [isMobile]); // Removed 'currentIndex' from dependencies
 
   const resetPosition = () => {
     if (containerRef.current) {
