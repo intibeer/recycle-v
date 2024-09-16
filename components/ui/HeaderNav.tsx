@@ -1,16 +1,17 @@
 "use client"
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Menu, LogIn, LogOut } from 'lucide-react';
+{/* import { useRouter } from 'next/navigation'; */}
+{/* import { Menu, LogIn, LogOut } from 'lucide-react'; */}
+import { Menu } from 'lucide-react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { Button } from "@/components/ui/button"
+{/* import { Button } from "@/components/ui/button" */}
 import { Session, AuthChangeEvent } from '@supabase/supabase-js'; // Import necessary types
 
 const HeaderNav = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState<Session['user'] | null>(null); // Type user as Session['user'] or null
-  const router = useRouter();
+  {/* const router = useRouter(); */}
   const supabase = createClientComponentClient();
 
   useEffect(() => {
@@ -23,13 +24,15 @@ const HeaderNav = () => {
         }
       }
     );
-
+    console.log(user)
     return () => subscription.unsubscribe();
   }, [supabase.auth]);
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
   };
+
+  {/* 
 
   const handleLogin = () => {
     router.push('/login');
@@ -44,6 +47,7 @@ const HeaderNav = () => {
     router.push('/dashboard');
   };
 
+  */}
   return (
     <header className="bg-white shadow-md">
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
@@ -61,24 +65,22 @@ const HeaderNav = () => {
 
           </nav>
           {/*
-          {user ? (
-            <>
-              <Button onClick={handleDashboard} variant="default" className="text-white font-bold tracking-tight" size="sm">
-                Dashboard
+            {user ? (
+              <>
+                <Button onClick={handleDashboard} variant="default" className="text-white font-bold tracking-tight" size="sm">
+                  Dashboard
+                </Button>
+                <Button onClick={handleLogout} variant="outline" size="sm">
+                  <LogOut className="mr-2 h-4 w-4" /> Logout
+                </Button>
+              </>
+            ) : (
+                + Add an Item
               </Button>
-              <Button onClick={handleLogout} variant="outline" size="sm">
-                <LogOut className="mr-2 h-4 w-4" /> Logout
-              </Button>
-            </>
-          ) : (
-            <Button onClick={handleLogin} variant="default" className="text-white font-extrabold tracking-tighter" size="sm">
-              + Add an Item
-            </Button>
-          )}
-            */}
+            )}
+          */}
         </div>
 
-        {/* Hamburger Menu for Mobile */}
         <div className="md:hidden">
           <button onClick={toggleMenu}>
             <Menu className="h-6 w-6 text-gray-900" />

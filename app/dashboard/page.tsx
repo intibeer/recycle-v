@@ -20,6 +20,13 @@ type UsedItem = {
   created_at: string
 }
 
+type LocationSuggestion = {
+  display_name: string;
+  lat: string;
+  lon: string;
+};
+
+
 export default function Dashboard() {
   const [items, setItems] = useState<UsedItem[]>([])
   const [name, setName] = useState('')
@@ -31,7 +38,7 @@ export default function Dashboard() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
   const [termsAgreed, setTermsAgreed] = useState(false) // State for terms checkbox
-  const [locationSuggestions, setLocationSuggestions] = useState<any[]>([]) // Store location suggestions
+  const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([]); // Store location suggestions
 
   const router = useRouter()
   const supabase = createClientComponentClient()
