@@ -376,7 +376,11 @@ export default function Component() {
                   <DialogTrigger asChild>
                     <Card className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
                       <div className="relative">
-                        <img src={item.image_url} alt={item.name} className="w-full h-48 object-cover" />
+                        <img
+                          src={item.image_url ? item.image_url : '/placeholder.svg'}
+                          alt={item.name}
+                          className="w-full h-48 object-cover"
+                        />
                         <div className="absolute top-2 right-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded-full text-sm">
                           {item.distance ? `${Math.round(item.distance)} km` : ''}
                         </div>

@@ -62,7 +62,6 @@ const HeaderNav = () => {
           </nav>
           {/*
           {user ? (
- 
             <>
               <Button onClick={handleDashboard} variant="default" className="text-white font-bold tracking-tight" size="sm">
                 Dashboard
