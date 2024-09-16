@@ -381,7 +381,7 @@ export default function Component() {
                           alt={item.name}
                           className="w-full h-48 object-cover"
                         />
-                        <div className="absolute top-2 right-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded-full text-sm">
+                        <div className="absolute top-2 right-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded-full text-base">
                           {item.distance ? `${Math.round(item.distance)} km` : ''}
                         </div>
                       </div>
@@ -397,7 +397,7 @@ export default function Component() {
                           </span>
                           <Badge>{item.site}</Badge>
                         </div>
-                        <div className="flex items-center text-sm text-gray-500">
+                        <div className="flex items-center text-base text-gray-500">
                           <MapPin className="w-4 h-4 mr-1" />
                           {item.location}
                         </div>
@@ -421,7 +421,7 @@ export default function Component() {
                           </span>
                           <Badge className='text-white'>{item.site}</Badge>
                         </div>
-                        <div className="flex items-center text-sm text-gray-500">
+                        <div className="flex items-center text-base text-gray-500">
                           <MapPin className="w-4 h-4 mr-1" />
                           {item.location} ({item.distance} km)
                         </div>
