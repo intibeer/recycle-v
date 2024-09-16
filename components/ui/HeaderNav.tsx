@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 {/* import { useRouter } from 'next/navigation'; */}
 {/* import { Menu, LogIn, LogOut } from 'lucide-react'; */}
-import { Menu } from 'lucide-react';
+{/* import { Menu } from 'lucide-react'; */}
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 {/* import { Button } from "@/components/ui/button" */}
 import { Session, AuthChangeEvent } from '@supabase/supabase-js'; // Import necessary types
@@ -80,12 +80,13 @@ const HeaderNav = () => {
             )}
           */}
         </div>
-
+          {/*
         <div className="md:hidden">
           <button onClick={toggleMenu}>
             <Menu className="h-6 w-6 text-gray-900" />
           </button>
         </div>
+                  */}
       </div>
 
       {/* Mobile Menu */}
