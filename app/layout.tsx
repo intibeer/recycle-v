@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import { Open_Sans } from "next/font/google"; // Import Open Sans
+import { Open_Sans } from "next/font/google";
 import "./globals.css";
 import HeaderNav from "@/components/ui/HeaderNav";
-import Head from "next/head";
 import Footer from "@/components/ui/Footer";
 
 // Define local fonts
@@ -48,11 +47,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <Head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"></meta>
-      </Head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${openSans.variable} antialiased min-h-screen flex flex-col`}
+        className={`${geistSans.variable} ${geistMono.variable} ${openSans.variable} antialiased min-h-screen flex flex-col bg-pattern`}
       >
         <main className="flex-grow">
           <HeaderNav />
