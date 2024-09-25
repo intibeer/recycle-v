@@ -107,7 +107,8 @@ function SlotText() {
         <div
           ref={containerRef}
           style={styles.slotMachineRecipeItemsContainer}
-          className='grayscale brightness-0 contrast-200'
+          className='invert filter brightness-0'
+
         >
           {items}
         </div>

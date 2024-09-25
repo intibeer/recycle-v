@@ -48,7 +48,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${openSans.variable} antialiased min-h-screen flex flex-col bg-pattern`}
+        className={`${geistSans.variable} ${geistMono.variable} ${openSans.variable} antialiased min-h-screen flex flex-col bg-print-pattern">`}
       >
         <main className="flex-grow">
           <HeaderNav />

@@ -40,9 +40,43 @@ import { ButtonMoving, MovingBorder } from '@/components/ui/moving-border';
 const client = algoliasearch('LCJ8YL7RLE', 'ec319a204d0b72f8d17a4611a96aaa46');
 const index = client.initIndex('used-objects');
 
+type ResultItem = {
+  objectID: string;
+  name: string;
+  description: string;
+  image_url: string;
+  url: string;
+  date: string;
+  time_posted: string;
+  price: string;
+  href: string;
+  location: string;
+  site: string;
+  lat: number;
+  lon: number;
+  town: string;
+  region: string;
+  country: string;
+  _geoloc: {
+    lat: number;
+    lng: number;
+  };
+  distance?: number;
+};
+
+type MarketplaceItem = {
+  selected: boolean;
+  logo: string;
+};
+
+// Define a type for the marketplaces object
+type Marketplaces = {
+  [key: string]: MarketplaceItem;
+};
+
 export default function Component() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [marketplaces, setMarketplaces] = useState({
+  const [marketplaces, setMarketplaces] = useState<Marketplaces>({
     'gumtree.com': { selected: true, logo: 'gumtree.png' },
     'facebook.com': { selected: true, logo: 'facebook.png' },
     'ebay.co.uk': { selected: true, logo: 'ebay.png' },
@@ -53,16 +87,17 @@ export default function Component() {
 
   const [postcode, setPostcode] = useState('');
   const [radius, setRadius] = useState([10]);
-  const [results, setResults] = useState([]);
+  const [results, setResults] = useState<ResultItem[]>([]);
+  const [sortedResults, setSortedResults] = useState<ResultItem[]>([]);
   const [isSticky, setIsSticky] = useState(false);
   const [sortOption, setSortOption] = useState('featured');
   const [isFilterOpen, setIsFilterOpen] = useState(true);
   const [isMarketplaceOpen, setIsMarketplaceOpen] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [sortedResults, setSortedResults] = useState([]);
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+
 
   useEffect(() => {
     const checkMobile = () => {
@@ -232,8 +267,8 @@ export default function Component() {
     setMarketplaces((prev) => ({
       ...prev,
       [marketplace]: {
-        ...prev[marketplace],
-        selected: !prev[marketplace].selected,
+        ...prev[marketplace as keyof Marketplaces],
+        selected: !prev[marketplace as keyof Marketplaces].selected,
       },
     }));
   };
@@ -247,14 +282,21 @@ export default function Component() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-8">
-      <h1 className="text-xl md:text-3xl tracking-tighter font-ultra text-center flex flex-col md:flex-row items-center justify-center">
-        <span>Search</span>
+    <>
+    
+    <div className="max-w-6xl mx-auto p-6 space-y-8 ">
+
+    <h1 className="text-xl md:text-3xl tracking-tighter font-ultra text-center pb-6 md:pb-0  flex flex-col md:flex-row items-center justify-center">
+      <div className="bg-custom-green text-white rounded-lg px-4 pb-6 md:pb-0 inline-flex items-center">
+        <span className='pt-6 md:pb-2'>Search</span>
         <div className="inline-flex mx-2 h-[50px] md:h-[100px]">
           <SlotText />
         </div>
-        <span>all at once</span>
-      </h1>
+        <span className='pt-6 md:pb-4'>all at once</span>
+      </div>
+    </h1>
+
+
       <div className={`bg-white border rounded-md transition-all duration-300 ${isSticky ? 'sticky top-0 z-10 shadow-md' : ''}`}>
         <Collapsible open={isFilterOpen} onOpenChange={setIsFilterOpen}>
           <CollapsibleTrigger asChild>
@@ -464,5 +506,6 @@ export default function Component() {
         </div>
       ) : null}
     </div>
+    </>
   )
 }
