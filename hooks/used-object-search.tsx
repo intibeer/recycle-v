@@ -288,11 +288,11 @@ export default function Component() {
 
     <h1 className="text-xl md:text-3xl tracking-tighter font-ultra text-center pb-6 md:pb-0  flex flex-col md:flex-row items-center justify-center">
       <div className="bg-custom-green text-white rounded-lg px-4 pb-6 md:pb-0 inline-flex items-center">
-        <span className='pt-6 md:pb-2'>Search</span>
+        <span className='pt-5 md:pb-2 lg:pt-0'>Search</span>
         <div className="inline-flex mx-2 h-[50px] md:h-[100px]">
           <SlotText />
         </div>
-        <span className='pt-6 md:pb-4'>all at once</span>
+        <span className='pt-5 md:pb-2 lg:pt-0'>all at once</span>
       </div>
     </h1>
 
