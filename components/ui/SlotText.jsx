@@ -67,7 +67,7 @@ function SlotText() {
 
     const intervalId = setInterval(() => {
       animate();
-    }, 1000); // Reduced interval time to 1 second
+    }, 1000); 
 
     return () => clearInterval(intervalId);
   }, []);
