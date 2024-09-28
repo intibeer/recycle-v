@@ -31,7 +31,7 @@ export default function Dashboard() {
   const [items, setItems] = useState<UsedItem[]>([])
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
-  const [price, setPrice] = useState<number | ''>('') // Updated to be a number or empty string
+  const [price, setPrice] = useState<number | ''>('')
   const [location, setLocation] = useState('')
   const [image, setImage] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
