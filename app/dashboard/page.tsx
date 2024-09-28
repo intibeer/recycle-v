@@ -113,7 +113,7 @@ export default function Dashboard() {
       name,
       description,
       image_url,
-      price: price.toString(), // Ensure price is stored as string
+      price: price.toString(), 
       location,
       site: `recycle.co.uk${userId}`,
       date: new Date().toISOString(),
