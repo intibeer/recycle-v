@@ -137,7 +137,7 @@ export default function Dashboard() {
 
   const handleLocationSearch = async (query: string) => {
     try {
-      if (query.length < 3) return; // Only search if at least 3 characters are typed
+      if (query.length < 3) return;
       const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&addressdetails=1&limit=5`);
       const data = await response.json();
       setLocationSuggestions(data); // Update location suggestions
