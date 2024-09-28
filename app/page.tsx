@@ -73,9 +73,9 @@ const Home: React.FC = () => {
 
       {isVisible && (
         <div className="fixed bottom-4 right-4 z-50">
-          <div className="relative bg-white rounded-full shadow-lg p-2">
+          <div className="relative rounded-full shadow-lg p-2">
             <button 
-              className="absolute top-0 right-0 bg-gray-200 rounded-full p-1 transform translate-x-1/2 -translate-y-1/2"
+              className="absolute top-0 right-0 bg-gray-200 rounded-full transform translate-x-1/2 -translate-y-1/2"
               onClick={handleClose}
             >
               <X size={16} />
