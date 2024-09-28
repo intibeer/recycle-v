@@ -128,7 +128,7 @@ export default function Dashboard() {
       setPrice('')
       setLocation('')
       setImage(null)
-      setTermsAgreed(false) // Reset terms checkbox
+      setTermsAgreed(false)
       fetchItems(userId)
     }
 
