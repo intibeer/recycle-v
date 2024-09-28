@@ -13,7 +13,7 @@ const styles = {
     position: 'absolute',
     top: 0,
     width: '100%',
-    transition: 'top 0.5s ease-in-out',
+    transition: 'top 0.3s ease-in-out', // Reduced transition duration
   },
   slotMachineRecipeItem: {
     minHeight: '80px',
@@ -67,7 +67,7 @@ function SlotText() {
 
     const intervalId = setInterval(() => {
       animate();
-    }, 2000);
+    }, 1000); // Reduced interval time to 1 second
 
     return () => clearInterval(intervalId);
   }, []);
@@ -77,7 +77,7 @@ function SlotText() {
       containerRef.current.style.transition = 'none';
       containerRef.current.style.top = '0';
       setTimeout(() => {
-        containerRef.current.style.transition = 'top 0.5s ease-in-out';
+        containerRef.current.style.transition = 'top 0.3s ease-in-out'; // Adjusted transition duration
       }, 20);
     }
   };
@@ -97,7 +97,7 @@ function SlotText() {
 
       setTimeout(() => {
         rotateContents();
-      }, 500);
+      }, 300); // Adjusted timeout to match transition duration
     }
   };
 
