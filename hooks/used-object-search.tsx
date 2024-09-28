@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import SlotText from "@/components/ui/SlotText";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,7 +34,6 @@ import {
 
 // Algolia setup
 import algoliasearch from 'algoliasearch';
-import { ButtonMoving, MovingBorder } from '@/components/ui/moving-border';
 
 const client = algoliasearch('LCJ8YL7RLE', 'ec319a204d0b72f8d17a4611a96aaa46');
 const index = client.initIndex('used-objects');
@@ -69,7 +67,6 @@ type MarketplaceItem = {
   logo: string;
 };
 
-// Define a type for the marketplaces object
 type Marketplaces = {
   [key: string]: MarketplaceItem;
 };
@@ -98,7 +95,6 @@ export default function Component() {
   const [hasSearched, setHasSearched] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768);
@@ -114,12 +110,10 @@ export default function Component() {
   useEffect(() => {
     const fetchUserPostcode = async () => {
       try {
-        // First, get the approximate location based on IP
         const ipResponse = await fetch('https://ipapi.co/json/');
         const ipData = await ipResponse.json();
         
         if (ipData.latitude && ipData.longitude) {
-          // Use postcodes.io to get the nearest postcode
           const postcodeResponse = await fetch(`https://api.postcodes.io/postcodes?lon=${ipData.longitude}&lat=${ipData.latitude}`);
           const postcodeData = await postcodeResponse.json();
           
@@ -139,8 +133,8 @@ export default function Component() {
     fetchUserPostcode();
   }, []);
 
-  const sortResults = (results: any[], option: string) => {
-    const sorted = [...results].sort((a, b) => {
+  const sortResults = (results: ResultItem[], option: string): ResultItem[] => {
+    return [...results].sort((a, b) => {
       switch (option) {
         case 'distance':
           return (a.distance || 0) - (b.distance || 0);
@@ -153,7 +147,6 @@ export default function Component() {
           return 0;
       }
     });
-    return sorted;
   };
 
   useEffect(() => {
@@ -169,12 +162,12 @@ export default function Component() {
     }
   }, [results, sortOption]);
 
-  const validateUKPostcode = (postcode: string) => {
+  const validateUKPostcode = (postcode: string): boolean => {
     const postcodeRegex = /^([A-Z]{1,2}[0-9]{1,2}[A-Z]?) ?([0-9][A-Z]{2})?$/i;
     return postcodeRegex.test(postcode);
   };
 
-  const fetchCoordinatesFromPostcode = async (postcode: string) => {
+  const fetchCoordinatesFromPostcode = async (postcode: string): Promise<{ latitude: number; longitude: number } | null> => {
     try {
       const response = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&postalcode=${postcode}&countrycodes=GB`);
       if (!response.ok) throw new Error('Failed to fetch coordinates');
@@ -194,7 +187,7 @@ export default function Component() {
     }
   };
 
-  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
     const toRad = (value: number) => (value * Math.PI) / 180;
     const R = 6371;
     const dLat = toRad(lat2 - lat1);
@@ -267,13 +260,13 @@ export default function Component() {
     setMarketplaces((prev) => ({
       ...prev,
       [marketplace]: {
-        ...prev[marketplace as keyof Marketplaces],
-        selected: !prev[marketplace as keyof Marketplaces].selected,
+        ...prev[marketplace],
+        selected: !prev[marketplace].selected,
       },
     }));
   };
   
-  const handleGetItem = (item: any) => {
+  const handleGetItem = (item: ResultItem) => {
     if (item.href) {
       window.open(item.href, '_blank');
     } else {
@@ -282,20 +275,16 @@ export default function Component() {
   };
 
   return (
-    <>
-    
-    <div className="max-w-6xl mx-auto p-6 space-y-8 ">
-
-    <h1 className="text-xl md:text-3xl tracking-tighter font-ultra text-center pb-6 md:pb-0  flex flex-col md:flex-row items-center justify-center">
-      <div className="bg-custom-green text-white rounded-lg px-4 pb-6 md:pb-0 inline-flex items-center">
-        <span className='pt-5 md:pb-2 lg:pt-0'>Search</span>
-        <div className="inline-flex mx-2 h-[50px] md:h-[100px]">
-          <SlotText />
+    <div className="max-w-6xl mx-auto p-6 space-y-8">
+      <h1 className="text-xl md:text-3xl tracking-tighter font-ultra text-center pb-6 md:pb-0 flex flex-col md:flex-row items-center justify-center">
+        <div className="bg-custom-green text-white rounded-lg px-4 pb-6 md:pb-0 inline-flex items-center">
+          <span className='pt-5 md:pb-2 lg:pt-0'>Search</span>
+          <div className="inline-flex mx-2 h-[50px] md:h-[100px]">
+            <SlotText />
+          </div>
+          <span className='pt-5 md:pb-2 lg:pt-0'>all at once</span>
         </div>
-        <span className='pt-5 md:pb-2 lg:pt-0'>all at once</span>
-      </div>
-    </h1>
-
+      </h1>
 
       <div className={`bg-white border rounded-md transition-all duration-300 ${isSticky ? 'sticky top-0 z-10 shadow-md' : ''}`}>
         <Collapsible open={isFilterOpen} onOpenChange={setIsFilterOpen}>
@@ -402,16 +391,15 @@ export default function Component() {
       </div>
 
       {loading ? (
-  <div className="flex justify-center">
-    <img src="/loading-spinner.gif" width={100} height={100} alt="Loading..." />
-  </div>
-) : hasSearched && results.length === 0 ? (
-  <div className="text-center py-8">
-    <h2 className="text-2xl font-bold mb-4">No results found</h2>
-    <p className="text-gray-600 mb-4">Please try a different search or adjust your filters.</p>
-
-  </div>
-) : results.length > 0 ? (
+        <div className="flex justify-center">
+          <img src="/loading-spinner.gif" width={100} height={100} alt="Loading..." />
+        </div>
+      ) : hasSearched && results.length === 0 ? (
+        <div className="text-center py-8">
+          <h2 className="text-2xl font-bold mb-4">No results found</h2>
+          <p className="text-gray-600 mb-4">Please try a different search or adjust your filters.</p>
+        </div>
+      ) : results.length > 0 ? (
         <div className="space-y-4 pt-4">
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-bold tracking-tight">Search Results</h2>
@@ -423,20 +411,20 @@ export default function Component() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-              <DropdownMenuRadioGroup
+                <DropdownMenuRadioGroup
                   value={sortOption}
                   onValueChange={(value) => setSortOption(value)}
                 >
-                <DropdownMenuRadioItem value="featured">Featured</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="distance">Distance</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="price-low">Price: Low to High</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="price-high">Price: High to Low</DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
+                  <DropdownMenuRadioItem value="featured">Featured</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="distance">Distance</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="price-low">Price: Low to High</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="price-high">Price: High to Low</DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {sortedResults.map((item) => (
+            {sortedResults.map((item) => (
               <Dialog key={item.objectID}>
                 <DialogTrigger asChild>
                   <Card className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
@@ -460,45 +448,58 @@ export default function Component() {
                               : `£${Math.round(parseFloat(item.price.replace(/£/g, '')))}`
                           }
                         </span>
-                        <Badge>{item.site}</Badge>
                       </div>
                       <div className="flex items-center text-base text-gray-500">
                         <MapPin className="w-4 h-4 mr-1" />
                         {item.location}
                       </div>
+                      <div className="mt-2 flex justify-end">
+
+                        <img 
+                          src={`/${marketplaces[item.site]?.logo}`} 
+                          alt={item.site} 
+                          className="pr-2 h-6 grayscale contrast-200 brightness-0 "
+                        />
+                        {/* <p className='text-xs  text-custom-green/80'>{ item.site } </p> */}
+                      </div>
+
                     </CardContent>
                   </Card>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>{item.name}</DialogTitle>
-                  <DialogDescription>
-                    <div className="mt-2 space-y-2">
-                      <img src={item.image_url} alt={item.name} className="w-full h-48 object-cover rounded-md" />
-                      <p>{item.description}</p>
-                      <div className="flex justify-between items-center">
-                        <span className="text-xl tracking-tighter extra-bold">
-                        {
-                            isNaN(parseFloat(item.price)) || item.price === '0' || item.price === '0.00' || parseFloat(item.price) === 0 
-                              ? 'Free' 
-                              : `£${Math.round(parseFloat(item.price.replace(/£/g, '')))}`
-                          }
-                        </span>
-                        <Badge className='text-white'>{item.site}</Badge>
+                  <DialogHeader>
+                    <DialogTitle>{item.name}</DialogTitle>
+                    <DialogDescription>
+                      <div className="mt-2 space-y-2">
+                        <img src={item.image_url} alt={item.name} className="w-full h-48 object-cover rounded-md" />
+                        <p>{item.description}</p>
+                        <div className="flex justify-between items-center">
+                          <span className="text-xl tracking-tighter extra-bold">
+                            {
+                              isNaN(parseFloat(item.price)) || item.price === '0' || item.price === '0.00' || parseFloat(item.price) === 0 
+                                ? 'Free' 
+                                : `£${Math.round(parseFloat(item.price.replace(/£/g, '')))}`
+                            }
+                          </span>
+                          <img 
+                            src={`/${marketplaces[item.site]?.logo}`} 
+                            alt={item.site} 
+                            className="h-6"
+                          />
+                        </div>
+                        <div className="flex items-center text-base text-gray-500">
+                          <MapPin className="w-4 h-4 mr-1" />
+                          {item.location} ({item.distance ? `${Math.round(item.distance)} km` : 'Unknown distance'})
+                        </div>
                       </div>
-                      <div className="flex items-center text-base text-gray-500">
-                        <MapPin className="w-4 h-4 mr-1" />
-                        {item.location} ({item.distance} km)
-                      </div>
-                    </div>
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="mt-4">
-                  <Button onClick={() => handleGetItem(item)} className="w-full text-white font-bold">
-                    Get
-                    <ExternalLink className="w-4 h-4 ml-2" />
-                  </Button>
-                </div>
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="mt-4">
+                    <Button onClick={() => handleGetItem(item)} className="w-full text-white font-bold">
+                      Get
+                      <ExternalLink className="w-4 h-4 ml-2" />
+                    </Button>
+                  </div>
                 </DialogContent>
               </Dialog>
             ))}
@@ -506,6 +507,5 @@ export default function Component() {
         </div>
       ) : null}
     </div>
-    </>
-  )
+  );
 }
