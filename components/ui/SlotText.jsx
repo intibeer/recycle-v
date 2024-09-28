@@ -77,7 +77,7 @@ function SlotText() {
       containerRef.current.style.transition = 'none';
       containerRef.current.style.top = '0';
       setTimeout(() => {
-        containerRef.current.style.transition = 'top 0.3s ease-in-out'; // Adjusted transition duration
+        containerRef.current.style.transition = 'top 0.3s ease-in-out';
       }, 20);
     }
   };
