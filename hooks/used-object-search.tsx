@@ -194,6 +194,7 @@ export default function UsedObjectSearch({ initialCategory }: ComponentProps) {
       });
   
       setResults(updatedResults);
+      setIsFilterOpen(false);
     } catch (error) {
       console.error('Error fetching from Algolia:', error);
       if (error instanceof Error) {
