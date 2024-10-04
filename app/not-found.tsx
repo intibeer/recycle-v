@@ -7,7 +7,7 @@ export default function NotFound() {
   const router = useRouter()
 
   useEffect(() => {
-    router.push('/')
+    router.push('/') //redirect home
   }, [router])
 
   return null
