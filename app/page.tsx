@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import CookieConsent, { getCookieConsentValue, Cookies } from "react-cookie-consent";
-import Component from '../hooks/used-object-search';
+import UsedObjectSearch from '../hooks/used-object-search';
 import Script from "next/script";
 import { X } from 'lucide-react';
 
@@ -34,7 +34,7 @@ const Home: React.FC = () => {
 
   return (
     <>
-      <Component />
+      <UsedObjectSearch />
       <CookieConsent
         location="bottom"
         buttonText="Accept"
