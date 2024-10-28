@@ -47,6 +47,7 @@ type ComponentProps = {
   initialCategory?: string;
 };
 
+
 export default function UsedObjectSearch({ initialCategory }: ComponentProps) {
   const [searchTerm, setSearchTerm] = useState(initialCategory || '');
   const [marketplaces, setMarketplaces] = useState<Marketplaces>({
