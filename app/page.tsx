@@ -1,10 +1,14 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import CookieConsent, { getCookieConsentValue, Cookies } from "react-cookie-consent";
-import UsedObjectSearch from '../hooks/used-object-search';
+import React, { useState, useEffect } from "react";
+import CookieConsent, {
+  getCookieConsentValue,
+  Cookies,
+} from "react-cookie-consent";
+import UsedObjectSearch from "../hooks/used-object-search";
 import Script from "next/script";
-import { X } from 'lucide-react';
+import { X } from "lucide-react";
+import { fetchUniqueTowns } from "@/lib/locations";
 
 const Home: React.FC = () => {
   const [consent, setConsent] = useState<string | undefined>(undefined);
@@ -32,6 +36,36 @@ const Home: React.FC = () => {
     setIsChatOpen((prev) => !prev);
   };
 
+  const [towns, setTowns] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadTowns = async () => {
+      try {
+        const uniqueTowns = await fetchUniqueTowns();
+        setTowns(uniqueTowns);
+        // You can use towns here for generating sitemaps or footer links
+        generateSitemaps(uniqueTowns); // Example function call
+        setupFooterLinks(uniqueTowns); // Another example
+      } catch (error) {
+        console.error("Error loading towns:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadTowns();
+  }, []); // Runs once on mount
+
+  const generateSitemaps = (towns: string[]) => {
+    // Your logic to generate sitemaps using towns
+  };
+
+  // Function to set up footer links
+  const setupFooterLinks = (towns: string[]) => {
+    // Your logic to create footer links
+  };
+
   return (
     <>
       <UsedObjectSearch />
@@ -44,8 +78,18 @@ const Home: React.FC = () => {
         onDecline={handleReject}
         cookieName="userConsentForCookies"
         style={{ background: "#ffffff", color: "black" }}
-        buttonStyle={{ color: "#fff", fontSize: "13px", borderRadius: "5px", background: "#328665" }}
-        declineButtonStyle={{ color: "#fff", fontSize: "13px", borderRadius: "5px", background: "black" }}
+        buttonStyle={{
+          color: "#fff",
+          fontSize: "13px",
+          borderRadius: "5px",
+          background: "#328665",
+        }}
+        declineButtonStyle={{
+          color: "#fff",
+          fontSize: "13px",
+          borderRadius: "5px",
+          background: "black",
+        }}
         expires={150}
       >
         This website uses cookies to enhance the user experience.
@@ -67,14 +111,14 @@ const Home: React.FC = () => {
                 gtag('config', 'G-MK0WETNJGT');
               `,
             }}
-          /> 
+          />
         </>
       )}
 
       {isVisible && (
         <div className="fixed bottom-4 right-4 z-50">
           <div className="relative rounded-full shadow-lg p-2">
-            <button 
+            <button
               className="absolute top-0 right-0 bg-gray-200 rounded-full transform translate-x-1/2 -translate-y-1/2"
               onClick={handleClose}
             >

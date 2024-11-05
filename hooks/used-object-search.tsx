@@ -32,6 +32,7 @@ export type ResultItem = {
     lng: number;
   };
   distance?: number;
+  category_hierarchy: string[];
 };
 
 export type MarketplaceItem = {
