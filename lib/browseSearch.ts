@@ -11,73 +11,111 @@ export async function fetchBrowseItemsWithFacets(
   location?: string | null
 ): Promise<{
   items: ResultItem[];
+  categoryTotal: number;
   total: number;
   facets: {
     locations: { value: string; count: number }[];
     subcategories: { value: string; count: number }[];
   };
+  properCategoryName: string;
 }> {
   try {
-    let filters = [];
+    const properCategoryName = getIndexCategory(category);
+    console.log("Input category:", category);
+    console.log("Mapped category name:", properCategoryName);
+    
+    // Build separate filters for different purposes
+    let mainFilters = [];
+    let subcategoryFilters = [];
+    let locationFilter = location ? `town:"${location}"` : null;
 
-    // Handle 'uncategorized' specially
+    // Base category filter
     if (category.toLowerCase() === "uncategorized") {
-      filters.push("NOT _exists_:category_hierarchy");
+      mainFilters.push("NOT *exists*:category_hierarchy");
     } else {
-      const properCategoryName = getIndexCategory(category);
+      mainFilters.push(`category_hierarchy:"${properCategoryName}"`);
 
-      console.log("URL category:", category);
-      console.log("Transformed to:", properCategoryName);
-
-      filters.push(`category_hierarchy:"${properCategoryName}"`);
-
+      // Separate subcategory filter
       if (subcategory) {
-        filters.push(
+        subcategoryFilters = [...mainFilters];
+        subcategoryFilters.push(
           `category_hierarchy:"${properCategoryName} > ${subcategory}"`
         );
       }
     }
-    // Add location filter if provided
-    if (location) {
-      filters.push(`town:"${location}"`);
-    }
 
-    // First, get total items count
-    const categoryResponse = await index.search("", {
-      filters:
-        category.toLowerCase() === "uncategorized"
-          ? "NOT _exists_:category_hierarchy"
-          : `category_hierarchy:"${category}"`,
+    // Get category total WITH location filter if present
+    const categoryTotalResponse = await index.search("", {
+      filters: [
+        ...mainFilters,
+        locationFilter
+      ].filter(Boolean).join(" AND "),
       hitsPerPage: 0,
     });
 
-    // Then get filtered results
+    // Get subcategory facets using a faceted search - now INCLUDING location filter
+    const subcategoryResponse = await index.search("", {
+      filters: [
+        ...mainFilters,
+        locationFilter
+      ].filter(Boolean).join(" AND "),
+      hitsPerPage: 0,
+      facets: ["category_hierarchy"],
+      maxValuesPerFacet: 100,
+    });
+
+    // Get results with all applicable filters
     const response = await index.search("", {
-      filters: filters.join(" AND "),
+      filters: [
+        ...(subcategory ? subcategoryFilters : mainFilters),
+        locationFilter,
+      ]
+        .filter(Boolean)
+        .join(" AND "),
       hitsPerPage: 100,
       facets: ["town"],
     });
 
-    console.log("Search response:", {
-      filters: filters.join(" AND "),
-      totalHits: response.nbHits,
-      sampleHit: response.hits[0],
+    // Get location facets using the appropriate category/subcategory filters
+    const locationResponse = await index.search("", {
+      filters: (subcategory ? subcategoryFilters : mainFilters).join(" AND "),
+      hitsPerPage: 0,
+      facets: ["town"],
+      maxValuesPerFacet: 1000,
     });
 
-    // For uncategorized items, we don't need subcategory facets
+    // Process the facets to get accurate subcategory counts
+    let processedSubcategories = [];
+    if (subcategoryResponse.facets?.category_hierarchy) {
+      processedSubcategories = Object.entries(
+        subcategoryResponse.facets.category_hierarchy
+      )
+        .filter(([path]) => path.startsWith(`${properCategoryName} > `))
+        .map(([path, count]) => ({
+          value: path.split(" > ")[1],
+          count: count as number,
+        }))
+        .sort((a, b) => b.count - a.count);
+    }
+
+    const locationFacets = locationResponse.facets?.town
+      ? Object.entries(locationResponse.facets.town)
+          .map(([value, count]) => ({
+            value,
+            count: count as number,
+          }))
+          .sort((a, b) => b.count - a.count)
+      : [];
+
     const subcategoryFacets =
       category.toLowerCase() === "uncategorized"
-        ? [] // Empty subcategories for uncategorized items
+        ? []
         : [
-            // Add "All Category" entry first with the total count
-            { value: `All ${category}`, count: categoryResponse.nbHits },
-            // Process subcategories as before
-            ...processSubcategoryFacets(response.hits, category),
+            { value: `All ${category}`, count: categoryTotalResponse.nbHits },
+            ...processedSubcategories,
           ];
 
-    // Process locations
-    const locationFacets = processLocationFacets(response);
-
+    // Map the items from the response
     const items: ResultItem[] = response.hits.map((hit: any) => ({
       objectID: hit.objectID,
       name: hit.name || "",
@@ -108,51 +146,17 @@ export async function fetchBrowseItemsWithFacets(
     return {
       items,
       total: response.nbHits,
+      categoryTotal: categoryTotalResponse.nbHits,
       facets: {
         locations: locationFacets,
         subcategories: subcategoryFacets,
       },
+      properCategoryName,
     };
   } catch (error) {
     console.error("Browse search failed:", error);
     throw error;
   }
-}
-
-// Helper functions
-function processSubcategoryFacets(hits: any[], category: string) {
-  const subcategoryFacets: Record<string, number> = {};
-
-  hits.forEach((hit: any) => {
-    if (hit.category_hierarchy && Array.isArray(hit.category_hierarchy)) {
-      hit.category_hierarchy.forEach((path: string) => {
-        const parts = path.split(" > ");
-        const mainCategory = parts[0];
-        if (mainCategory.toLowerCase() === category.toLowerCase() && parts[1]) {
-          const sub = parts[1];
-          subcategoryFacets[sub] = (subcategoryFacets[sub] || 0) + 1;
-        }
-      });
-    }
-  });
-
-  console.log("Processed subcategories:", subcategoryFacets);
-
-  return Object.entries(subcategoryFacets)
-    .map(([value, count]) => ({
-      value,
-      count,
-    }))
-    .sort((a, b) => b.count - a.count);
-}
-
-function processLocationFacets(response: any) {
-  return response.facets?.town
-    ? Object.entries(response.facets.town).map(([value, count]) => ({
-        value,
-        count: count as number,
-      }))
-    : [];
 }
 
 export async function fetchBrowseIndexWithFacets(): Promise<{
@@ -263,3 +267,42 @@ export async function fetchBrowseIndexWithFacets(): Promise<{
   }
 }
 export const revalidate = 3600; // Revalidate once per hour
+
+/*
+
+// Helper functions
+function processSubcategoryFacets(hits: any[], category: string) {
+  const subcategoryFacets: Record<string, number> = {};
+
+  hits.forEach((hit: any) => {
+    if (hit.category_hierarchy && Array.isArray(hit.category_hierarchy)) {
+      hit.category_hierarchy.forEach((path: string) => {
+        const parts = path.split(" > ");
+        const mainCategory = parts[0];
+        if (mainCategory.toLowerCase() === category.toLowerCase() && parts[1]) {
+          const sub = parts[1];
+          subcategoryFacets[sub] = (subcategoryFacets[sub] || 0) + 1;
+        }
+      });
+    }
+  });
+
+  console.log("Processed subcategories:", subcategoryFacets);
+
+  return Object.entries(subcategoryFacets)
+    .map(([value, count]) => ({
+      value,
+      count,
+    }))
+    .sort((a, b) => b.count - a.count);
+}
+
+function processLocationFacets(response: any) {
+  return response.facets?.town
+    ? Object.entries(response.facets.town).map(([value, count]) => ({
+        value,
+        count: count as number,
+      }))
+    : [];
+}
+*/

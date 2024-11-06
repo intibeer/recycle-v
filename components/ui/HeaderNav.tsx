@@ -1,24 +1,86 @@
-// HeaderNav.tsx
 "use client";
 
+import { useEffect, useState } from 'react';
 import { Categories } from "./Categories";
 import { MobileMenu } from "./MobileMenu";
 import Link from "next/link";
 import Image from "next/image";
+import { getCategoryCounts } from "@/lib/getCategoryCounts";
 
-// Add "use client" if this component uses any hooks or browser APIs
+// Define types
+interface Category {
+  href: string;
+  name: string;
+  count: number | null;
+}
 
-// Top categories based on count
-const topCategories = [
-  { href: "/browse/furniture", name: "Furniture", count: 272 },
-  { href: "/browse/baby-kids", name: "Baby & Kids", count: 201 },
-  { href: "/browse/sports-leisure", name: "Sports & Leisure", count: 154 },
-  { href: "/browse/home-decor", name: "Home Décor", count: 154 },
-  { href: "/browse/garden-outdoor", name: "Garden & Outdoor", count: 72 },
-  { href: "/browse", name: "Show All Categories", count: null },
-];
+interface CachedData {
+  counts: {
+    total: number;
+    categories: Array<{ value: string; count: number }>;
+  };
+  timestamp: number;
+}
+
+const CACHE_KEY = 'category-counts';
+const CACHE_DURATION = 60 * 60 * 1000; // 1 hour in milliseconds
+const TOP_CATEGORIES_COUNT = 5; // Number of top categories to show
 
 const HeaderNav = () => {
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        // Check cache first
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+          const { counts, timestamp }: CachedData = JSON.parse(cached);
+          if (Date.now() - timestamp < CACHE_DURATION) {
+            // Cache is still valid, use it
+            updateCategoriesWithCounts(counts);
+            return;
+          }
+        }
+
+        // Cache missing or expired, fetch new data
+        const counts = await getCategoryCounts();
+        
+        // Save to cache
+        localStorage.setItem(CACHE_KEY, JSON.stringify({
+          counts,
+          timestamp: Date.now()
+        }));
+
+        // Update categories
+        updateCategoriesWithCounts(counts);
+      } catch (error) {
+        console.error('Failed to fetch category counts:', error);
+      }
+    };
+
+    const updateCategoriesWithCounts = (counts: { categories: Array<{ value: string; count: number }> }) => {
+      // Get top categories by count
+      const topCategories = counts.categories
+        .slice(0, TOP_CATEGORIES_COUNT)
+        .map(cat => ({
+          name: cat.value,
+          href: `/browse/${cat.value.toLowerCase().replace(/\s+/g, '-')}`,
+          count: cat.count
+        }));
+
+      // Add "Show All Categories" at the end
+      const allCategories = [
+        ...topCategories,
+        { href: "/browse", name: "Show All Categories", count: null }
+      ];
+
+      setCategories(allCategories);
+    };
+
+    fetchCounts();
+  }, []);
+
   return (
     <header className="bg-white/60 shadow-md">
       <div className="container mx-auto px-4 sm:px-2 py-4 flex justify-between items-center">
@@ -45,7 +107,7 @@ const HeaderNav = () => {
               }}
             >
               <option value="">Select Category</option>
-              {topCategories.map((cat) => (
+              {categories.map((cat) => (
                 <option key={cat.href} value={cat.href}>
                   {cat.name} {cat.count ? `(${cat.count})` : ""}
                 </option>
@@ -54,11 +116,11 @@ const HeaderNav = () => {
           </noscript>
 
           {/* JS-enabled menu */}
-          <Categories categories={topCategories} />
+          <Categories categories={categories} />
 
           {/* Mobile menu */}
           <div className="md:hidden">
-            <MobileMenu categories={topCategories} />
+            <MobileMenu categories={categories} />
           </div>
         </div>
       </div>

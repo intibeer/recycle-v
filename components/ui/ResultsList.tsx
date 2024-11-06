@@ -4,22 +4,28 @@ import { Marketplaces, ResultItem as ResultItemType } from '@/hooks/used-object-
 
 type ResultsListProps = {
   loading: boolean;
+  loadingMore?: boolean;
   hasSearched: boolean;
   results: ResultItemType[];
   sortOption: string;
   setSortOption: (option: string) => void;
   marketplaces: Marketplaces;
   categoryName?: string;
+  onLoadMore?: () => void;
+  hasMore?: boolean;
 };
 
 export function ResultsList({
   loading,
+  loadingMore,
   hasSearched,
   results,
   sortOption,
   setSortOption,
   marketplaces,
-  categoryName
+  categoryName,
+  onLoadMore,
+  hasMore
 }: ResultsListProps) {
   // Filter out results without images
   const filteredResults = results.filter(item => item.image_url && item.image_url !== "/placeholder.svg");
@@ -50,11 +56,31 @@ export function ResultsList({
           </h2>
           <SortDropdown sortOption={sortOption} setSortOption={setSortOption} />
         </div>
+        
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredResults.map((item) => (
             <ResultItem key={item.objectID} item={item} marketplaces={marketplaces} />
           ))}
         </div>
+
+        {hasMore && (
+          <div className="mt-8 flex justify-center">
+            <button
+              onClick={onLoadMore}
+              disabled={loadingMore}
+              className="px-4 py-2 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loadingMore ? (
+                <div className="flex items-center gap-2">
+                  <img src="/loading-spinner.gif" width={20} height={20} alt="" />
+                  Loading more...
+                </div>
+              ) : (
+                "Load More"
+              )}
+            </button>
+          </div>
+        )}
       </div>
     );
   }
