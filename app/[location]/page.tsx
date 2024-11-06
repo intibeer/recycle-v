@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { ResultsList } from "@/components/ui/ResultsList";
-import { fetchItemsWithFacets } from "@/lib/search";
+import { fetchItemsWithFacets, debugCategorization } from "@/lib/search";
 import {
   ResultItem as ResultItemType,
   Marketplaces,
@@ -40,6 +40,8 @@ export default function LocationPage({
         setResults(items);
         setTotal(total);
         setCategories(facets);  // Using facets instead of categoryFacets
+        await debugCategorization(locationParam);
+
       } catch (error) {
         console.error("Error fetching results:", error);
       } finally {

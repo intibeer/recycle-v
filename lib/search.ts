@@ -101,8 +101,6 @@ export async function fetchItemsByCategoryWithFacets(
   }
 }
 
-
-
 // New function to fetch items by location only
 export async function fetchItemsByLocationWithFacets(
   location: string
@@ -117,30 +115,31 @@ export async function fetchItemsByLocationWithFacets(
       hitsPerPage: 100,
     });
 
-    console.log('Total hits:', response.nbHits);
+    console.log("Total hits:", response.nbHits);
     const firstHit = response.hits[0] as any;
-    console.log('Sample hit:', firstHit);
-    console.log('Sample category_hierarchy:', firstHit?.category_hierarchy);
+    console.log("Sample hit:", firstHit);
+    console.log("Sample category_hierarchy:", firstHit?.category_hierarchy);
 
     // Get unique main categories from the results
     const categoryCounts: Record<string, number> = {};
     response.hits.forEach((hit: any) => {
-      console.log('Processing hit category_hierarchy:', hit.category_hierarchy);
+      console.log("Processing hit category_hierarchy:", hit.category_hierarchy);
       if (hit.category_hierarchy && Array.isArray(hit.category_hierarchy)) {
         const mainCategory = hit.category_hierarchy[0];
-        console.log('Found main category:', mainCategory);
+        console.log("Found main category:", mainCategory);
         if (mainCategory) {
-          categoryCounts[mainCategory] = (categoryCounts[mainCategory] || 0) + 1;
+          categoryCounts[mainCategory] =
+            (categoryCounts[mainCategory] || 0) + 1;
         }
       }
     });
 
-    console.log('Category counts:', categoryCounts);
+    console.log("Category counts:", categoryCounts);
 
     const categoryFacets = Object.entries(categoryCounts)
       .map(([value, count]) => ({
         value,
-        count
+        count,
       }))
       .sort((a, b) => b.count - a.count);
 
@@ -182,7 +181,6 @@ export async function fetchItemsByLocationWithFacets(
   }
 }
 
-
 export async function fetchItemsWithFacets(
   location: string,
   category?: string,
@@ -193,94 +191,273 @@ export async function fetchItemsWithFacets(
   facets: { value: string; count: number }[];
 }> {
   try {
-    // Build filters based on params
-    let filters = `town:"${location}"`;
-
-    if (category) {
-      const normalizedCategory =
-        category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
-      filters += ` AND category_hierarchy:"${normalizedCategory}"`;
-
-      // Convert subcategory from null to undefined if needed
-      if (subcategory) {
-        filters += ` AND category_hierarchy:"${normalizedCategory} > ${subcategory}"`;
-      }
-    }
+    // Initial search to get total items and sample results
+    const baseFilters = `town:"${location}"`;
+    console.log("Base filters:", baseFilters);
 
     const response = await index.search("", {
-      filters,
+      filters: baseFilters,
       hitsPerPage: 100,
     });
 
-    // Get categories/subcategories from results
-    const facetCounts: Record<string, number> = {};
-
-    response.hits.forEach((hit: any) => {
-      if (hit.category_hierarchy && Array.isArray(hit.category_hierarchy)) {
-        if (category) {
-          // If category is provided, look for subcategories
-          hit.category_hierarchy.forEach((path: string) => {
-            if (path.startsWith(`${category} > `)) {
-              const sub = path.split(" > ")[1];
-              facetCounts[sub] = (facetCounts[sub] || 0) + 1;
-            }
-          });
-        } else {
-          // If no category, get main categories
-          const mainCategory = hit.category_hierarchy[0];
-          if (mainCategory) {
-            facetCounts[mainCategory] = (facetCounts[mainCategory] || 0) + 1;
-          }
-        }
-      }
+    console.log("Initial response:", {
+      totalHits: response.nbHits,
+      sampleHit: response.hits[0],
     });
 
-    const facets = Object.entries(facetCounts)
-      .map(([value, count]) => ({
-        value,
-        count,
-      }))
-      .sort((a, b) => b.count - a.count);
+    // If we're looking at a location page (no category specified),
+    // we need to get accurate counts for each category
+    if (!category) {
+      // Get unique main categories from initial results
+      const categorySet = new Set<string>();
+      response.hits.forEach((hit: any) => {
+        if (hit.category_hierarchy && Array.isArray(hit.category_hierarchy)) {
+          const mainCategory = hit.category_hierarchy[0];
+          if (mainCategory) {
+            categorySet.add(mainCategory);
+          }
+        }
+      });
 
-    const items: ResultItem[] = response.hits.map((hit: any) => ({
-      objectID: hit.objectID,
-      name: hit.name || "",
-      description: hit.description || "",
-      image_url: hit.image_url || "",
-      url: hit.url || "",
-      date: hit.date || "",
-      time_posted: hit.time_posted || "",
-      price: hit.price || "",
-      href: hit.href || "",
-      location: hit.location || "",
-      site: hit.site || "",
-      lat: Number(hit.lat) || 0,
-      lon: Number(hit.lon) || 0,
-      town: hit.town || "",
-      region: hit.region || "",
-      country: hit.country || "",
-      _geoloc: {
-        lat: Number(hit._geoloc?.lat) || 0,
-        lng: Number(hit._geoloc?.lng) || 0,
-      },
-      distance: hit.distance,
-      category_hierarchy: Array.isArray(hit.category_hierarchy)
-        ? hit.category_hierarchy
-        : [],
-    }));
+      console.log("Found categories:", Array.from(categorySet));
 
-    return {
-      items,
-      total: response.nbHits,
-      facets,
-    };
+      // Get count for each category with separate queries
+      const facetsPromises = Array.from(categorySet).map(async (catName) => {
+        const categoryResponse = await index.search("", {
+          filters: `town:"${location}" AND category_hierarchy:"${catName}"`,
+          hitsPerPage: 0, // We only need the count
+        });
+
+        console.log("Category count:", {
+          category: catName,
+          count: categoryResponse.nbHits,
+        });
+
+        return {
+          value: catName,
+          count: categoryResponse.nbHits,
+        };
+      });
+
+      const facets = await Promise.all(facetsPromises);
+      facets.sort((a, b) => b.count - a.count);
+
+      console.log("Final facets with counts:", facets);
+
+      // Map the hits to ResultItem type
+      const items: ResultItem[] = response.hits.map((hit: any) => ({
+        objectID: hit.objectID,
+        name: hit.name || "",
+        description: hit.description || "",
+        image_url: hit.image_url || "",
+        url: hit.url || "",
+        date: hit.date || "",
+        time_posted: hit.time_posted || "",
+        price: hit.price || "",
+        href: hit.href || "",
+        location: hit.location || "",
+        site: hit.site || "",
+        lat: Number(hit.lat) || 0,
+        lon: Number(hit.lon) || 0,
+        town: hit.town || "",
+        region: hit.region || "",
+        country: hit.country || "",
+        _geoloc: {
+          lat: Number(hit._geoloc?.lat) || 0,
+          lng: Number(hit._geoloc?.lng) || 0,
+        },
+        distance: hit.distance,
+        category_hierarchy: Array.isArray(hit.category_hierarchy)
+          ? hit.category_hierarchy
+          : [],
+      }));
+
+      return {
+        items,
+        total: response.nbHits,
+        facets,
+      };
+    } else {
+      // Original logic for category/subcategory pages
+      const normalizedCategory =
+        category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
+      let filters = `town:"${location}" AND category_hierarchy:"${normalizedCategory}"`;
+
+      if (subcategory) {
+        filters += ` AND category_hierarchy:"${normalizedCategory} > ${subcategory}"`;
+      }
+
+      console.log("Using filters:", filters);
+
+      const response = await index.search("", {
+        filters,
+        hitsPerPage: 100,
+      });
+
+      console.log("Search response:", {
+        totalHits: response.nbHits,
+        sampleHit: response.hits[0],
+      });
+
+      // Get categories/subcategories from results
+      const facetCounts: Record<string, number> = {};
+
+      response.hits.forEach((hit: any) => {
+        if (hit.category_hierarchy && Array.isArray(hit.category_hierarchy)) {
+          if (normalizedCategory) {
+            // If category is provided, look for subcategories
+            hit.category_hierarchy.forEach((path: string) => {
+              if (path.startsWith(`${normalizedCategory} > `)) {
+                const sub = path.split(" > ")[1];
+                facetCounts[sub] = (facetCounts[sub] || 0) + 1;
+                console.log("Found subcategory:", {
+                  path,
+                  subcategory: sub,
+                  count: facetCounts[sub],
+                });
+              }
+            });
+          } else {
+            // If no category, get main categories
+            const mainCategory = hit.category_hierarchy[0];
+            if (mainCategory) {
+              facetCounts[mainCategory] = (facetCounts[mainCategory] || 0) + 1;
+            }
+          }
+        }
+      });
+
+      console.log("Facet counts:", facetCounts);
+
+      const facets = Object.entries(facetCounts)
+        .map(([value, count]) => ({
+          value,
+          count,
+        }))
+        .sort((a, b) => b.count - a.count);
+
+      console.log("Final facets:", facets);
+
+      const items: ResultItem[] = response.hits.map((hit: any) => ({
+        objectID: hit.objectID,
+        name: hit.name || "",
+        description: hit.description || "",
+        image_url: hit.image_url || "",
+        url: hit.url || "",
+        date: hit.date || "",
+        time_posted: hit.time_posted || "",
+        price: hit.price || "",
+        href: hit.href || "",
+        location: hit.location || "",
+        site: hit.site || "",
+        lat: Number(hit.lat) || 0,
+        lon: Number(hit.lon) || 0,
+        town: hit.town || "",
+        region: hit.region || "",
+        country: hit.country || "",
+        _geoloc: {
+          lat: Number(hit._geoloc?.lat) || 0,
+          lng: Number(hit._geoloc?.lng) || 0,
+        },
+        distance: hit.distance,
+        category_hierarchy: Array.isArray(hit.category_hierarchy)
+          ? hit.category_hierarchy
+          : [],
+      }));
+
+      return {
+        items,
+        total: response.nbHits,
+        facets,
+      };
+    }
   } catch (error) {
     console.error("Search failed:", error);
     throw error;
   }
 }
 
+// @/lib/search.ts
 
+
+// @/lib/search.ts
+
+// @/lib/search.ts
+
+export async function debugCategorization(location: string) {
+  try {
+    const response = await index.search("", {
+      filters: `town:"${location}"`,
+      hitsPerPage: 1000,
+    });
+
+    const hits = response.hits as any[];
+
+    // More detailed categorization analysis
+    const categorizedItems = hits.filter(hit => 
+      hit.category_hierarchy?.length > 0
+    );
+    
+    const emptyCategories = hits.filter(hit => 
+      !hit.category_hierarchy?.length && hit.category_hierarchy !== undefined
+    );
+
+    const undefinedCategories = hits.filter(hit => 
+      hit.category_hierarchy === undefined
+    );
+
+    // Sample items from each group
+    const samples = {
+      categorized: categorizedItems.slice(0, 3).map(hit => ({
+        objectID: hit.objectID,
+        name: hit.name,
+        site: hit.site,
+        category_hierarchy: hit.category_hierarchy,
+        raw: hit // Include the raw hit for inspection
+      })),
+      empty: emptyCategories.slice(0, 3).map(hit => ({
+        objectID: hit.objectID,
+        name: hit.name,
+        site: hit.site,
+        raw: hit
+      })),
+      undefined: undefinedCategories.slice(0, 3).map(hit => ({
+        objectID: hit.objectID,
+        name: hit.name,
+        site: hit.site,
+        raw: hit
+      }))
+    };
+
+    // Site distribution
+    const siteDistribution = hits.reduce((acc, hit) => {
+      const site = hit.site || 'unknown';
+      acc[site] = acc[site] || { total: 0, categorized: 0, uncategorized: 0 };
+      acc[site].total++;
+      if (hit.category_hierarchy?.length > 0) {
+        acc[site].categorized++;
+      } else {
+        acc[site].uncategorized++;
+      }
+      return acc;
+    }, {});
+
+    console.log({
+      total: response.nbHits,
+      breakdown: {
+        categorized: categorizedItems.length,
+        emptyCategories: emptyCategories.length,
+        undefinedCategories: undefinedCategories.length,
+        total: hits.length
+      },
+      siteDistribution,
+      samples
+    });
+
+  } catch (error) {
+    console.error("Debug failed:", error);
+  }
+}
 
 /*
 export interface ResultItem {
@@ -307,7 +484,6 @@ export interface ResultItem {
   distance?: number;         // Optional distance from a reference point
 }
 */
-
 
 /*
 export async function fetchItemsByTypeAndLocation(

@@ -2,9 +2,12 @@
 import { useEffect, useState } from "react";
 import { ResultsList } from "@/components/ui/ResultsList";
 import { fetchItemsWithFacets } from "@/lib/search";
-import { ResultItem as ResultItemType, Marketplaces } from "@/hooks/used-object-search";
-import Link from 'next/link';
-import { useSearchParams, useRouter } from 'next/navigation';
+import {
+  ResultItem as ResultItemType,
+  Marketplaces,
+} from "@/hooks/used-object-search";
+import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
 
 export default function CategoryPage({
   params,
@@ -14,10 +17,10 @@ export default function CategoryPage({
   // Destructure and decode params
   const locationParam = decodeURIComponent(params.location);
   const categoryParam = decodeURIComponent(params.category);
-    
+
   const router = useRouter();
   const searchParams = useSearchParams();
-  const selectedSubcategory = searchParams.get('subcategory');
+  const selectedSubcategory = searchParams.get("subcategory");
 
   const [properLocation, setProperLocation] = useState(locationParam);
   const [properCategory, setProperCategory] = useState(categoryParam);
@@ -31,15 +34,36 @@ export default function CategoryPage({
   useEffect(() => {
     const fetchResults = async () => {
       setLoading(true);
+      console.log("Fetching results with params:", {
+        locationParam,
+        categoryParam,
+        selectedSubcategory,
+      });
+
       try {
-        const { items, total, facets: subcategoryFacets } = await fetchItemsWithFacets(
+        const {
+          items,
+          total,
+          facets: subcategoryFacets,
+        } = await fetchItemsWithFacets(
           locationParam,
           categoryParam,
           selectedSubcategory
         );
 
+        console.log("API Response:", {
+          itemsCount: items.length,
+          total,
+          subcategoryFacets,
+        });
+
         // Set proper case from first result
         if (items.length > 0) {
+          console.log("First item:", {
+            town: items[0].town,
+            categoryHierarchy: items[0].category_hierarchy,
+          });
+
           setProperLocation(items[0].town);
           // For category, find the matching category from category_hierarchy
           const categoryHierarchy = items[0].category_hierarchy;
@@ -47,13 +71,23 @@ export default function CategoryPage({
             const mainCategory = categoryHierarchy[0];
             setProperCategory(mainCategory);
           }
+        } else {
+          console.log("No items returned from API");
         }
 
         setResults(items);
         setTotal(total);
         setFacets(subcategoryFacets);
+
+        console.log("Updated state:", {
+          properLocation: items[0]?.town,
+          properCategory: items[0]?.category_hierarchy?.[0],
+          facetsCount: subcategoryFacets.length,
+          facets: subcategoryFacets,
+        });
       } catch (error) {
-        console.error("Error fetching results:", error);
+        console.error("Error fetching results:");
+        console.error(error);
       } finally {
         setLoading(false);
       }
@@ -63,25 +97,43 @@ export default function CategoryPage({
   }, [locationParam, categoryParam, selectedSubcategory]);
 
   const updateSubcategory = (subcategory: string | null) => {
+    console.log("Updating subcategory:", subcategory);
     if (subcategory) {
-      router.push(`/${locationParam}/${categoryParam}?subcategory=${encodeURIComponent(subcategory)}`);
+      router.push(
+        `/${locationParam}/${categoryParam}?subcategory=${encodeURIComponent(
+          subcategory
+        )}`
+      );
     } else {
       router.push(`/${locationParam}/${categoryParam}`);
     }
   };
 
+  console.log("Render state:", {
+    properLocation,
+    properCategory,
+    selectedSubcategory,
+    totalResults: total,
+    facetsCount: facets.length,
+    facets,
+  });
+
   return (
     <div className="container mx-auto p-6">
       {/* Breadcrumb */}
       <nav className="text-sm mb-6">
-        <Link href="/" className="hover:underline">Home</Link>
-        {' > '}
-        <Link href={`/${locationParam}`} className="hover:underline">{properLocation}</Link>
-        {' > '}
+        <Link href="/" className="hover:underline">
+          Home
+        </Link>
+        {" > "}
+        <Link href={`/${locationParam}`} className="hover:underline">
+          {properLocation}
+        </Link>
+        {" > "}
         <span className="font-semibold">{properCategory}</span>
         {selectedSubcategory && (
           <>
-            {' > '}
+            {" > "}
             <span className="text-gray-500">{selectedSubcategory}</span>
           </>
         )}
@@ -96,22 +148,30 @@ export default function CategoryPage({
               <button
                 onClick={() => updateSubcategory(null)}
                 className={`w-full text-left px-2 py-1.5 rounded ${
-                  !selectedSubcategory ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-50'
+                  !selectedSubcategory
+                    ? "bg-blue-50 text-blue-600"
+                    : "hover:bg-gray-50"
                 }`}
               >
                 All {properCategory} ({total})
               </button>
-              {facets.map(({ value, count }) => (
-                <button
-                  key={value}
-                  onClick={() => updateSubcategory(value)}
-                  className={`w-full text-left px-2 py-1.5 rounded ${
-                    selectedSubcategory === value ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-50'
-                  }`}
-                >
-                  {value} ({count})
-                </button>
-              ))}
+
+              {/* Subcategories container with left border and indent */}
+              <div className="pl-3 ml-2 border-l border-gray-200 space-y-1">
+                {facets.map(({ value, count }) => (
+                  <button
+                    key={value}
+                    onClick={() => updateSubcategory(value)}
+                    className={`w-full text-left px-2 py-1 rounded text-sm ${
+                      selectedSubcategory === value
+                        ? "bg-blue-50 text-blue-600"
+                        : "text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    {value} ({count})
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -119,15 +179,13 @@ export default function CategoryPage({
         {/* Main content */}
         <div className="flex-1">
           <h1 className="text-2xl font-bold mb-4">
-            {selectedSubcategory 
+            {selectedSubcategory
               ? `${selectedSubcategory} in ${properLocation}`
               : `${properCategory} in ${properLocation}`}
           </h1>
 
           {total > 0 && (
-            <p className="mb-4 text-gray-600">
-              Found {total} items
-            </p>
+            <p className="mb-4 text-gray-600">Found {total} items</p>
           )}
 
           <ResultsList
