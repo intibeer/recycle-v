@@ -1,5 +1,5 @@
 import { useRouter } from "next/navigation"; // Import Next.js router for client-side navigation
-import { MapPin, ExternalLink } from 'lucide-react';
+import { MapPin, ExternalLink } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,7 +10,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Marketplaces, ResultItem as ResultItemType } from '@/hooks/used-object-search';
+import {
+  Marketplaces,
+  ResultItem as ResultItemType,
+} from "@/hooks/used-object-search";
 
 type ResultItemProps = {
   item: ResultItemType;
@@ -26,13 +29,13 @@ export function ResultItem({ item, marketplaces }: ResultItemProps) {
   };
 
   return (
-    <Card 
+    <Card
       className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
       onClick={handleNavigateToItem} // Attach click handler to the entire card
     >
       <div className="relative">
         <img
-          src={item.image_url ? item.image_url : '/placeholder.svg'}
+          src={item.image_url ? item.image_url : "/placeholder.svg"}
           alt={item.name}
           className="w-full h-48 object-cover"
         />
@@ -46,11 +49,34 @@ export function ResultItem({ item, marketplaces }: ResultItemProps) {
         <h3 className="font-semibold text-lg mb-2">{item.name}</h3>
         <div className="flex justify-between items-center mb-2">
           <span className="text-xl font-bold">
-            {
-              isNaN(parseFloat(item.price)) || item.price === '0' || item.price === '0.00' || parseFloat(item.price) === 0 
-                ? 'Free' 
-                : `£${Math.round(parseFloat(item.price.replace(/£/g, '')))}`
-            }
+            {(() => {
+              // If price is already a number, just format it
+              if (typeof item.price === "number") {
+                return item.price === 0 ? "Free" : `£${Math.round(item.price)}`;
+              }
+
+              // If price is a string
+              if (typeof item.price === "string") {
+                // Check for 'Free' or empty string
+                if (!item.price || item.price.toLowerCase() === "free") {
+                  return "Free";
+                }
+
+                // Remove pound signs and try to parse
+                const cleanPrice = item.price.replace(/£/g, "").trim();
+                const parsedPrice = parseFloat(cleanPrice);
+
+                // If we can parse it to a number
+                if (!isNaN(parsedPrice)) {
+                  return parsedPrice === 0
+                    ? "Free"
+                    : `£${Math.round(parsedPrice)}`;
+                }
+              }
+
+              // Default case if we can't parse the price
+              return "Free";
+            })()}
           </span>
         </div>
         <div className="flex items-center text-base text-gray-500">
@@ -58,9 +84,9 @@ export function ResultItem({ item, marketplaces }: ResultItemProps) {
           {item.location}
         </div>
         <div className="mt-2 flex justify-end">
-          <img 
-            src={`/${marketplaces[item.site]?.logo}`} 
-            alt={item.site} 
+          <img
+            src={`/${marketplaces[item.site]?.logo}`}
+            alt={item.site}
             className="pr-2 h-6 grayscale contrast-200 brightness-0"
           />
         </div>

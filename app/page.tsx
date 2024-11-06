@@ -1,4 +1,6 @@
 "use client";
+import Head from "next/head";
+import { generateHomePageSchema } from "@/lib/structuredData";
 
 import React, { useState, useEffect } from "react";
 import CookieConsent, {
@@ -10,10 +12,16 @@ import Script from "next/script";
 import { X } from "lucide-react";
 import { fetchUniqueTowns } from "@/lib/locations";
 
+interface HomeProps {
+  schema: any; // You can make this more specific based on your schema type
+}
+
 const Home: React.FC = () => {
   const [consent, setConsent] = useState<string | undefined>(undefined);
   const [isVisible, setIsVisible] = useState(true);
   const [isChatOpen, setIsChatOpen] = useState(false);
+
+  const schema = generateHomePageSchema();
 
   useEffect(() => {
     setConsent(getCookieConsentValue());
@@ -68,6 +76,12 @@ const Home: React.FC = () => {
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(schema),
+        }}
+      />
       <UsedObjectSearch />
       <CookieConsent
         location="bottom"

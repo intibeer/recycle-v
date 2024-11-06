@@ -195,9 +195,13 @@ export async function fetchItemsWithFacets(
   try {
     // Build filters based on params
     let filters = `town:"${location}"`;
+
     if (category) {
-      const normalizedCategory = category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
+      const normalizedCategory =
+        category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
       filters += ` AND category_hierarchy:"${normalizedCategory}"`;
+
+      // Convert subcategory from null to undefined if needed
       if (subcategory) {
         filters += ` AND category_hierarchy:"${normalizedCategory} > ${subcategory}"`;
       }
@@ -210,13 +214,14 @@ export async function fetchItemsWithFacets(
 
     // Get categories/subcategories from results
     const facetCounts: Record<string, number> = {};
+
     response.hits.forEach((hit: any) => {
       if (hit.category_hierarchy && Array.isArray(hit.category_hierarchy)) {
         if (category) {
           // If category is provided, look for subcategories
           hit.category_hierarchy.forEach((path: string) => {
             if (path.startsWith(`${category} > `)) {
-              const sub = path.split(' > ')[1];
+              const sub = path.split(" > ")[1];
               facetCounts[sub] = (facetCounts[sub] || 0) + 1;
             }
           });
@@ -233,7 +238,7 @@ export async function fetchItemsWithFacets(
     const facets = Object.entries(facetCounts)
       .map(([value, count]) => ({
         value,
-        count
+        count,
       }))
       .sort((a, b) => b.count - a.count);
 
@@ -274,6 +279,7 @@ export async function fetchItemsWithFacets(
     throw error;
   }
 }
+
 
 
 /*

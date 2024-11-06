@@ -1,34 +1,119 @@
-import Link from 'next/link'
-import { Facebook } from 'lucide-react'
+// src/components/ui/Footer.tsx
+import Link from "next/link";
+import { Facebook } from "lucide-react";
+
+const popularCategories = [
+  { name: "Furniture", href: "/browse/furniture" },
+  { name: "Baby & Kids", href: "/browse/baby-kids" },
+  { name: "Sports & Leisure", href: "/browse/sports-leisure" },
+  { name: "Home Décor", href: "/browse/home-decor" },
+  { name: "Garden & Outdoor", href: "/browse/garden-outdoor" },
+];
+
+const locations = [
+  { name: "London", href: "/london" },
+  { name: "Manchester", href: "/manchester" },
+  { name: "Birmingham", href: "/birmingham" },
+  { name: "Leeds", href: "/leeds" },
+  { name: "Edinburgh", href: "/edinburgh" },
+];
 
 export default function Footer() {
   return (
-    <footer className="text-gray-600 py-4 bottom-0 relative">
+    <footer className="bg-white text-gray-600 py-8 border-t">
       <div className="container mx-auto px-4">
-        <div className="flex flex-col md:flex-row justify-between items-center">
-          <div className="mb-4 md:mb-0">
-            <p className="text-sm text-black">&copy; Copyright 2024. All rights reserved.</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+          {/* Popular Categories */}
+          <div>
+            <h3 className="font-semibold text-gray-900 mb-4">
+              Popular Categories
+            </h3>
+            <ul className="space-y-2">
+              {popularCategories.map((category) => (
+                <li key={category.href}>
+                  <Link
+                    href={category.href}
+                    className="text-gray-600 hover:text-gray-900 flex justify-between items-center"
+                  >
+                    <span>{category.name}</span>
+                   
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
-          <nav className="flex flex-wrap justify-center md:justify-end space-x-4 mb-4 md:mb-0">
-            <Link href="/privacy-policy" className="text-sm text-black font-extrabold hover:text-gray-900 transition-colors">
-              Privacy Policy
-            </Link>
-            <Link href="/terms-of-use" className="text-sm text-black font-extrabold hover:text-gray-900 transition-colors">
-              Terms of Use
-            </Link>
-            <Link href="/cookie-policy" className="text-sm font-extrabold text-black hover:text-gray-900 transition-colors">
-              Cookie Policy
-            </Link>
-          </nav>
-          <div className="flex items-center">
-            <span className="text-sm mr-2 text-black">Follow us on</span>
-            <Link href="https://www.facebook.com/recycle.co.uk" target="_blank" rel="noopener noreferrer" className="text-black hover:text-blue-800 transition-colors">
-              <Facebook className="w-5 h-5" />
-              <span className="sr-only">Facebook</span>
-            </Link>
+
+          {/* Browse By Location */}
+          <div>
+            <h3 className="font-semibold text-gray-900 mb-4">
+              Browse By Location
+            </h3>
+            <ul className="space-y-2">
+              {locations.map((location) => (
+                <li key={location.href}>
+                  <Link
+                    href={location.href}
+                    className="text-gray-600 hover:text-gray-900"
+                  >
+                    {location.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
+
+          {/* Legal & Social */}
+          <div>
+            <h3 className="font-semibold text-gray-900 mb-4">Information</h3>
+            <ul className="space-y-2 mb-6">
+              <li>
+                <Link
+                  href="/privacy-policy"
+                  className="text-gray-600 hover:text-gray-900"
+                >
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/terms-of-use"
+                  className="text-gray-600 hover:text-gray-900"
+                >
+                  Terms of Use
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/cookie-policy"
+                  className="text-gray-600 hover:text-gray-900"
+                >
+                  Cookie Policy
+                </Link>
+              </li>
+            </ul>
+
+            <div className="flex items-center mt-4">
+              <span className="text-sm mr-2">Follow us on</span>
+              <Link
+                href="https://www.facebook.com/recycle.co.uk"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-600 hover:text-blue-600 transition-colors"
+              >
+                <Facebook className="w-5 h-5" />
+                <span className="sr-only">Facebook</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Copyright Notice */}
+        <div className="border-t pt-4 mt-4">
+          <p className="text-sm text-center text-gray-600">
+            &copy; Copyright 2024. All rights reserved.
+          </p>
         </div>
       </div>
     </footer>
-  )
+  );
 }
