@@ -104,14 +104,16 @@ export default function LocationLandingPage({
           <h1 className="text-2xl font-bold">
             Used {category} in {location}
           </h1>
+          
           <div className="flex justify-between items-center">
-            <Link href="/browse" className="text-sm text-blue-600 hover:underline">
-              Back to all categories
-            </Link>
-            <RefineSearchButton 
+          <RefineSearchButton 
               category={category} 
               location={location} 
             />
+            <Link href="/browse" className="text-sm text-blue-600 hover:underline">
+              Back to all categories
+            </Link>
+           
           </div>
         </div>
         
