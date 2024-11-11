@@ -1,15 +1,22 @@
+"use client";
+
 import { useRefinementList, useInstantSearch } from "react-instantsearch";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 
+interface RouteParams {
+  category?: string;
+  location?: string;
+  subcategory?: string;
+  [key: string]: string | string[] | undefined;
+}
 function sanitizeForUrl(str: string): string {
-  return (
-    str
-      .toLowerCase()
-      .replace(/\s+/g, "-")
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9-]/g, "")
-  );
+  return str
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9-]/g, "");
 }
 
 function SubcategoryNav({
@@ -21,66 +28,95 @@ function SubcategoryNav({
   location: string;
   className?: string;
 }) {
-  const { items } = useRefinementList({
-    attribute: "category_hierarchy",
-    limit: 10,
-  });
+  const routeParams = useParams() as RouteParams;
+
+  const { items } = useRefinementList({ attribute: "category_hierarchy" });
 
   const { results } = useInstantSearch();
 
-  // Log the raw items first
-  console.log('Raw refinement items:', items.map(item => ({
-    label: item.label,
-    count: item.count,
-    isRefined: item.isRefined
-  })));
+  // Log InstantSearch state
+  console.log("InstantSearch Debug:", {
+    currentFilters: results?.state?.filters,
+    facetFilters: results?.state?.facetFilters,
+    params: results?.params,
+    totalHits: results?.nbHits,
+  });
 
-  // Filter for subcategories of the current category
-  const relevantItems = items.filter(item => {
+  console.log("Initial items from refinementList:", {
+    count: items?.length,
+    items: items?.map((item) => ({
+      label: item.label,
+      count: item.count,
+      isRefined: item.isRefined,
+    })),
+  });
+
+  console.log("1. All raw refinement items:", items);
+
+  const relevantItems = items.filter((item) => {
     const [parentCategory] = item.label.split(" > ");
     const isRelevant = parentCategory?.toLowerCase() === category.toLowerCase();
-    console.log('Checking item relevance:', {
+
+    console.log("Category check:", {
       itemLabel: item.label,
       parentCategory,
-      categoryToMatch: category,
-      isRelevant
+      categoryToMatch: category.toLowerCase(),
+      isRelevant,
+      refinementCount: item.count,
+      isRefined: item.isRefined,
     });
+
     return isRelevant;
   });
 
-  console.log('Relevant items for category:', {
-    category,
+  console.log("After category filter:", {
+    originalCount: items?.length,
+    filteredCount: relevantItems.length,
     items: relevantItems.map(item => ({
       label: item.label,
       count: item.count
     }))
   });
 
-  const subcategories = relevantItems.map((item) => {
-    const subcategoryName = item.label.split(" > ")[1] || item.label;
-    const processed = {
-      name: subcategoryName,
-      count: item.count,
-      isActive: item.isRefined,
-      urlSafe: sanitizeForUrl(subcategoryName),
-      originalLabel: item.label // Keep original for debugging
-    };
-    console.log('Processed subcategory:', processed);
-    return processed;
+  const subcategories = relevantItems
+    .filter((item) => {
+      const [parent, sub] = item.label.split(" > ");
+      const hasSubcategory = Boolean(sub);
+      console.log("Subcategory check:", {
+        label: item.label,
+        hasSubcategory,
+        parent,
+        sub
+      });
+      return hasSubcategory;
+    })
+    .map((item) => {
+      const subcategoryName = item.label.split(" > ")[1];
+      const urlSafe = sanitizeForUrl(subcategoryName);
+      console.log("Processing subcategory:", {
+        original: item.label,
+        subcategoryName,
+        urlSafe,
+        count: item.count,
+        isCurrentPage: routeParams.subcategory === urlSafe
+      });
+      return {
+        name: subcategoryName,
+        count: item.count,
+        isActive: routeParams.subcategory === urlSafe,
+        urlSafe,
+      };
+    });
+
+  console.log("Final subcategories:", {
+    total: subcategories.length,
+    subcategories: subcategories.map(sub => ({
+      name: sub.name,
+      count: sub.count,
+      isActive: sub.isActive,
+      urlSafe: sub.urlSafe
+    }))
   });
-
-  console.log('Final subcategories:', {
-    category,
-    count: subcategories.length,
-    subcategories
-  });
-
-  // Log sample results to verify categorization
-  console.log('Sample results:', results?.hits?.slice(0, 3).map(hit => ({
-    title: (hit as any).title,
-    categories: (hit as any).category_hierarchy
-  })));
-
   return (
     <div className={`w-full ${className}`}>
       <div className="mb-2">
@@ -93,7 +129,7 @@ function SubcategoryNav({
             px-4 py-2 rounded-full text-sm font-medium
             transition-colors duration-150 ease-in-out
             ${
-              subcategories.every((s) => !s.isActive)
+              !routeParams.subcategory
                 ? "bg-blue-600 text-white"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }
@@ -106,12 +142,11 @@ function SubcategoryNav({
             key={sub.name}
             href={`/browse/${category}/${location}/${sub.urlSafe}`}
             data-algolia-category={sub.name}
-            data-original-label={sub.originalLabel}
             className={`
               px-4 py-2 rounded-full text-sm font-medium
               transition-colors duration-150 ease-in-out
               ${
-                sub.isActive
+                routeParams.subcategory === sub.urlSafe
                   ? "bg-blue-600 text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }

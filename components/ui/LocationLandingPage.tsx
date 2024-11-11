@@ -1,10 +1,11 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   InstantSearch,
   Configure,
   Hits,
   RefinementList,
   useRefinementList,
+  useInstantSearch,
 } from "react-instantsearch";
 import { searchClient } from "@/lib/algolia";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import { Search } from "lucide-react";
 import Link from "next/link";
 import qs from "qs";
 import SubcategoryNav from "@/components/ui/SubCategoryNav";
+import { ResultsList } from "@/components/ui/ResultsList";
 
 interface Hit {
   objectID: string;
@@ -29,10 +31,10 @@ function Hit({ hit }: { hit: Hit }) {
       href={hit.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="block bg-white rounded-lg shadow hover:shadow-md transition-shadow"
+      className="block bg-white rounded-lg shadow hover:shadow-md transition-shadow h-full"
     >
-      <div className="flex p-4 gap-4">
-        <div className="w-40 h-40 relative flex-shrink-0">
+      <div className="flex flex-col p-4 h-full">
+        <div className="aspect-square w-full relative mb-4">
           <img
             src={hit.image_url}
             alt={hit.title}
@@ -51,10 +53,27 @@ function Hit({ hit }: { hit: Hit }) {
     </a>
   );
 }
-
 interface LocationLandingPageProps {
   category: string;
   location: string;
+}
+
+function ResultsManager({ category }: { category: string }) {
+  const { results } = useInstantSearch();
+  const [sortOption, setSortOption] = useState("relevance");
+
+  return (
+    <ResultsList
+      loading={!results}
+      hasSearched={true}
+      results={results?.hits || []}
+      sortOption={sortOption}
+      setSortOption={setSortOption}
+      marketplaces={{}}
+      categoryName={category}
+      showHeading={false}
+    />
+  );
 }
 
 function RefineSearchButton({
@@ -135,17 +154,14 @@ export default function LocationLandingPage({
           </div>
         </div>
 
-        {/* Add the SubcategoryNav here */}
         <SubcategoryNav
           category={category}
           location={location}
           className="border-b border-gray-200 pb-4"
         />
 
-        {/* Results section */}
-        <div className="space-y-4">
-          <Hits hitComponent={Hit} />
-        </div>
+        {/* Results section with grid layout */}
+        <ResultsManager category={category} />
       </div>
       <Configure {...initialConfig} />
     </InstantSearch>
