@@ -3,6 +3,7 @@ import { Metadata } from "next";
 import { siteConfig } from "@/config/site";
 import { fetchBrowseItemsWithFacets } from "@/lib/browseSearch";
 import { generateJsonLd } from "./json-ld";
+import { slugToCategory, isValidCategorySlug } from "@/lib/categoryToSlug";
 
 export const revalidate = 3600;
 
@@ -11,22 +12,19 @@ export async function generateMetadata({
 }: {
   params: { category: string };
 }): Promise<Metadata> {
+  const category = slugToCategory(params.category);
   const { total } = await fetchBrowseItemsWithFacets(
-    params.category,
+    category,
     null,
     null
   );
 
   return {
-    title: `Second Hand ${
-      params.category.charAt(0).toUpperCase() + params.category.slice(1)
-    } | ${siteConfig.name}`,
-    description: `Browse second hand ${params.category} across the UK`,
+    title: `Second Hand ${category} | ${siteConfig.name}`,
+    description: `Browse second hand ${category} across the UK`,
     openGraph: {
-      title: `Second Hand ${
-        params.category.charAt(0).toUpperCase() + params.category.slice(1)
-      }`,
-      description: `Browse ${total} second hand ${params.category} items`,
+      title: `Second Hand ${category}`,
+      description: `Browse ${total} second hand ${category} items`,
       url: `${siteConfig.url}/browse/${params.category}`,
     },
     alternates: {
@@ -44,16 +42,21 @@ export default async function CategoryLayout({
   params: { category: string };
   searchParams?: { [key: string]: string | string[] | undefined };
 }) {
+  if (!isValidCategorySlug(params.category)) {
+    throw new Error('Invalid category slug');
+  }
+
+  const category = slugToCategory(params.category);
+  
   // Get searchParams values safely using first array item if array
   const subcategory = Array.isArray(searchParams?.subcategory)
     ? searchParams.subcategory[0]
     : searchParams?.subcategory || null;
-
   const location = Array.isArray(searchParams?.location)
     ? searchParams.location[0]
     : searchParams?.location || null;
 
-  const jsonLd = await generateJsonLd(params.category, subcategory, location);
+  const jsonLd = await generateJsonLd(category, subcategory, location);
 
   return (
     <>

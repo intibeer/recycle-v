@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getCategoryCounts } from "@/lib/getCategoryCounts"; // Adjust path as needed
+import { categoryToSlug } from "@/lib/categoryToSlug";
 
 interface CategoryData {
   total: number;
@@ -27,9 +28,30 @@ export default function BrowseIndexPage() {
         setLoading(false);
       }
     };
-
     fetchCategories();
   }, []);
+
+  const CategoryCard = ({ category }: { category: { value: string; count: number } }) => {
+    const slug = categoryToSlug(category.value);
+    
+    return (
+      <div className="bg-white rounded-lg shadow p-4 hover:shadow-lg transition-shadow">
+        <Link href={`/browse/${slug}`} className="block">
+          <h2 className="text-xl font-semibold mb-2">
+            {category.value} ({category.count.toLocaleString()})
+          </h2>
+        </Link>
+        <div className="text-sm text-gray-600">
+          <Link
+            href={`/browse/${slug}`}
+            className="text-blue-600 hover:underline"
+          >
+            View all items →
+          </Link>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="container mx-auto p-6">
@@ -58,32 +80,7 @@ export default function BrowseIndexPage() {
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {categoryData?.categories.map((category) => (
-            <div
-              key={category.value}
-              className="bg-white rounded-lg shadow p-4 hover:shadow-lg transition-shadow"
-            >
-              <Link
-                href={`/browse/${encodeURIComponent(
-                  category.value.toLowerCase()
-                )}`}
-                className="block"
-              >
-                <h2 className="text-xl font-semibold mb-2">
-                  {category.value} ({category.count.toLocaleString()})
-                </h2>
-              </Link>
-
-              <div className="text-sm text-gray-600">
-                <Link
-                  href={`/browse/${encodeURIComponent(
-                    category.value.toLowerCase()
-                  )}`}
-                  className="text-blue-600 hover:underline"
-                >
-                  View all items →
-                </Link>
-              </div>
-            </div>
+            <CategoryCard key={category.value} category={category} />
           ))}
         </div>
       )}

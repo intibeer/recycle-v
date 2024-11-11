@@ -287,30 +287,8 @@ function SearchContent({
 function getCategoryName(slug: string) {
   return slug.split("+").map(decodeURIComponent).join(" ");
 }
-export const routing = {
+const routing = {
   router: history({
-    parseURL({ qsModule, location }) {
-      const parsedParams = qsModule.parse(location.search.slice(1), {
-        arrayFormat: "bracket", // This handles subcategory[0], subcategory[1] format
-        parseNumbers: false,
-      });
-
-      return {
-        query: parsedParams.query || "",
-        page: Number(parsedParams.page || 1),
-        locations: Array.isArray(parsedParams.locations)
-          ? parsedParams.locations
-          : parsedParams.locations
-          ? [parsedParams.locations]
-          : [],
-        subcategory: Array.isArray(parsedParams.subcategory)
-          ? parsedParams.subcategory
-          : parsedParams.subcategory
-          ? [parsedParams.subcategory]
-          : [],
-      };
-    },
-
     createURL({ qsModule, routeState, location }) {
       const queryParams = {
         query: routeState.query,
@@ -325,19 +303,21 @@ export const routing = {
         encode: true,
       });
 
-      return `${location.pathname}${queryString}`;
+      // Use categoryToSlug when creating URLs
+      const categorySlug = categoryToSlug(routeState.category || "");
+      return `/browse/${categorySlug}${queryString}`;
     },
 
     parseURL({ qsModule, location }) {
       const pathParts = location.pathname.split("/");
-      const category = getCategoryName(pathParts[2]);
+      const categorySlug = pathParts[2];
+      const category = slugToCategory(categorySlug);
 
       const parsed = qsModule.parse(location.search.slice(1), {
         arrayFormat: "repeat",
         parseNumbers: false,
       });
 
-      // Ensure consistent array handling for both parameters
       const locations = Array.isArray(parsed.locations)
         ? parsed.locations
         : parsed.locations
