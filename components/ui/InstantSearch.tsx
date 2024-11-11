@@ -1,3 +1,6 @@
+import { useMemo, useRef } from "react";
+import { RefinementListProps } from 'react-instantsearch'; 
+
 import {
   InstantSearch,
   RefinementList,
@@ -22,6 +25,12 @@ interface BrowseViewProps {
   category: string;
   initialSubcategory: string | null;
   initialLocation: string | null;
+}
+interface UsedObjectsUiState {
+  refinementList: {
+    town?: string[];
+    category_hierarchy?: string[];
+  };
 }
 
 interface Hit {
@@ -109,7 +118,7 @@ function TitleSection({
         {locationText}
       </h1>
       <Link href="/browse" className="text-sm text-blue-600 hover:underline">
-        View all items
+        Back to all categories
       </Link>
       {results?.nbHits > 0 && (
         <p className="text-gray-600">Found {results.nbHits} items</p>
@@ -143,10 +152,57 @@ function SearchContent({
   initialLocation,
 }: BrowseViewProps) {
   const [isFiltersOpen, setFiltersOpen] = useState(false);
+  console.log("initialLocation set to ", initialLocation);
+
+  // Common RefinementList props for locations
+  const locationRefinementProps = {
+    attribute: "town",
+    searchable: true,
+    searchablePlaceholder: "Search locations...",
+    operator: "or",
+  };
+
+  // Common RefinementList props for subcategories
+  const subcategoryRefinementProps = {
+    attribute: "category_hierarchy",
+    searchable: true,
+    searchablePlaceholder: "Search types...",
+    operator: "or",
+  };
+
+
+  // Common class names for refinement lists
+  const refinementClassNames = {
+    root: "space-y-4",
+    searchBox: "relative mb-4",
+    input:
+      "w-full px-8 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
+    submitIcon: "hidden",
+    resetIcon: "hidden",
+    loadMore:
+      "text-sm text-blue-600 hover:text-blue-800 font-medium cursor-pointer block mt-2",
+    list: "space-y-2",
+    item: "group",
+    label:
+      "flex items-center gap-2 cursor-pointer py-1.5 px-2 rounded hover:bg-gray-50 transition-colors",
+    checkbox:
+      "h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500",
+    labelText: "flex-1 text-gray-700 group-hover:text-gray-900",
+    count: "text-sm text-gray-500 group-hover:text-gray-700",
+  };
+
+  // Mobile refinement class names with slightly different styling
+  const mobileRefinementClassNames = {
+    ...refinementClassNames,
+    input:
+      "w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500",
+    label:
+      "flex items-center gap-2 cursor-pointer py-1.5 px-2 rounded hover:bg-gray-100 transition-colors",
+  };
 
   return (
     <div className="flex gap-6">
-      {/* Facets sidebar for mobile */}
+      {/* Mobile sidebar */}
       <div
         className={`fixed inset-y-0 left-0 w-64 bg-white shadow-lg p-4 z-40 transition-transform transform ${
           isFiltersOpen ? "translate-x-0" : "-translate-x-full"
@@ -159,135 +215,48 @@ function SearchContent({
           </button>
         </div>
 
-        {/* Location facet */}
+        {/* Mobile Location facet */}
         <div className="bg-white rounded-lg shadow p-4">
           <h2 className="text-xl font-semibold mb-4">Locations</h2>
           <RefinementList
-            attribute="town"
-            searchable={true}
-            searchablePlaceholder="Search locations..."
+            {...locationRefinementProps}
             limit={4}
             showMore={true}
-            operator="or"
-            classNames={{
-              root: "space-y-4",
-              searchBox: "relative mb-4",
-              input:
-                "w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500",
-              list: "space-y-2",
-              item: "group",
-              label:
-                "flex items-center gap-2 cursor-pointer py-1.5 px-2 rounded hover:bg-gray-100 transition-colors",
-              checkbox:
-                "h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500",
-              labelText: "flex-1 text-gray-700 group-hover:text-gray-900",
-              count: "text-sm text-gray-500 group-hover:text-gray-700",
-            }}
+            classNames={mobileRefinementClassNames}
           />
         </div>
 
-        {/* Category facet */}
+        {/* Mobile Category facet */}
         <div className="bg-white rounded-lg shadow p-4">
           <h2 className="text-xl font-semibold mb-4">Types of {category}</h2>
           <RefinementList
-            attribute="category_hierarchy"
-            searchable={true}
-            searchablePlaceholder="Search types..."
+            {...subcategoryRefinementProps}
             limit={5}
             showMore={true}
-            operator="or"
-            transformItems={(items) =>
-              items.map((item) => ({
-                ...item,
-                label: item.label.split(" > ").pop(), // Keep only the subcategory after the " > "
-              }))
-            }
-            classNames={{
-              root: "space-y-4",
-              searchBox: "relative mb-4",
-              input:
-                "w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500",
-              list: "space-y-2",
-              item: "group",
-              label:
-                "flex items-center gap-2 cursor-pointer py-1.5 px-2 rounded hover:bg-gray-100 transition-colors",
-              checkbox:
-                "h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500",
-              labelText: "flex-1 text-gray-700 group-hover:text-gray-900",
-              count: "text-sm text-gray-500 group-hover:text-gray-700",
-            }}
+            classNames={mobileRefinementClassNames}
           />
         </div>
       </div>
 
-      {/* Facets sidebar for desktop */}
+      {/* Desktop facets sidebar */}
       <div className="hidden md:block w-64 space-y-6">
         <div className="bg-white rounded-lg shadow p-4">
           <h2 className="text-xl font-semibold mb-4">Locations</h2>
           <RefinementList
-            attribute="town"
-            searchable={true}
-            searchablePlaceholder="Search locations..."
+            {...locationRefinementProps}
             limit={5}
             showMore={true}
-            operator="or"
-            classNames={{
-              root: "space-y-4",
-              searchBox: "relative mb-4",
-              input:
-                "w-full px-8 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
-              submitIcon: "hidden",
-              resetIcon: "hidden",
-              loadMore:
-                "text-sm text-blue-600 hover:text-blue-800 font-medium cursor-pointer block mt-2",
-              list: "space-y-2",
-              item: "group",
-              label:
-                "flex items-center gap-2 cursor-pointer py-1.5 px-2 rounded hover:bg-gray-50 transition-colors",
-              checkbox:
-                "h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500",
-              labelText: "flex-1 text-gray-700 group-hover:text-gray-900",
-              count: "text-sm text-gray-500 group-hover:text-gray-700",
-            }}
+            classNames={refinementClassNames}
           />
         </div>
 
         <div className="bg-white rounded-lg shadow p-4">
           <h2 className="text-xl font-semibold mb-4">Types of {category}</h2>
           <RefinementList
-            attribute="category_hierarchy"
-            searchable={true}
-            searchablePlaceholder="Search types..."
+            {...subcategoryRefinementProps}
             limit={10}
             showMore={true}
-            operator="or"
-            transformItems={(items) =>
-              items
-                .filter((item) => item.label.includes(" > "))
-                .map((item) => ({
-                  ...item,
-                  highlighted: item.label.split(" > ")[1],
-                  label: item.label.split(" > ")[1],
-                }))
-            }
-            classNames={{
-              root: "space-y-4",
-              searchBox: "relative mb-4",
-              input:
-                "w-full px-8 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
-              submitIcon: "hidden",
-              resetIcon: "hidden",
-              loadMore:
-                "text-sm text-blue-600 hover:text-blue-800 font-medium cursor-pointer block mt-2",
-              list: "space-y-2",
-              item: "group",
-              label:
-                "flex items-center gap-2 cursor-pointer py-1.5 px-2 rounded hover:bg-gray-50 transition-colors",
-              checkbox:
-                "h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500",
-              labelText: "flex-1 text-gray-700 group-hover:text-gray-900",
-              count: "text-sm text-gray-500 group-hover:text-gray-700",
-            }}
+            classNames={refinementClassNames}
           />
         </div>
       </div>
@@ -297,114 +266,108 @@ function SearchContent({
         <TitleSection
           category={category}
           initialSubcategory={initialSubcategory}
-          setFiltersOpen={setFiltersOpen} // Keep mobile logic intact
+          initialLocation={initialLocation}
+          setFiltersOpen={setFiltersOpen}
         />
-        <InfiniteHits /> {/* Replace Hits with InfiniteHits */}
+        <InfiniteHits />
       </div>
     </div>
   );
 }
 
-// Helper functions to slugify category names for URL paths
-function getCategorySlug(name: string) {
-  return name.split(" ").map(encodeURIComponent).join("+");
-}
-
 function getCategoryName(slug: string) {
   return slug.split("+").map(decodeURIComponent).join(" ");
 }
-
-const routing = {
+export const routing = {
   router: history({
-    windowTitle({ query, locations }) {
-      const queryTitle = query ? `Results for "${query}"` : "Search";
-      return locations ? `${locations} – ${queryTitle}` : queryTitle;
+    parseURL({ qsModule, location }) {
+      const parsedParams = qsModule.parse(location.search.slice(1), {
+        arrayFormat: 'bracket',  // This handles subcategory[0], subcategory[1] format
+        parseNumbers: false,
+      });
+
+      return {
+        query: parsedParams.query || '',
+        page: Number(parsedParams.page || 1),
+        locations: Array.isArray(parsedParams.locations) 
+          ? parsedParams.locations 
+          : parsedParams.locations ? [parsedParams.locations] : [],
+        subcategory: Array.isArray(parsedParams.subcategory)
+          ? parsedParams.subcategory
+          : parsedParams.subcategory ? [parsedParams.subcategory] : [],
+      };
     },
 
     createURL({ qsModule, routeState, location }) {
-      const baseUrl = location.pathname;
+      const queryParams = {
+        query: routeState.query,
+        page: routeState.page,
+        locations: routeState.locations || [],
+        subcategory: routeState.subcategory || [],
+      };
 
-      const queryParameters: Record<string, string | string[]> = {};
-
-      if (routeState.query) queryParameters.query = routeState.query;
-      if (routeState.page && routeState.page !== 1)
-        queryParameters.page = String(routeState.page);
-      if (routeState.locations)
-        queryParameters.locations = routeState.locations;
-      if (routeState.subcategory && routeState.subcategory.length > 0) {
-        queryParameters.subcategory = routeState.subcategory;
-      } // Only include subcategory if it has a value
-
-      const queryString = qsModule.stringify(queryParameters, {
+      const queryString = qsModule.stringify(queryParams, {
+        arrayFormat: 'bracket',
         addQueryPrefix: true,
-        arrayFormat: "repeat",
+        encode: true,
       });
 
-      return `${baseUrl}${queryString}`;
+      return `${location.pathname}${queryString}`;
     },
 
     parseURL({ qsModule, location }) {
-      const pathnameMatches = location.pathname.match(/browse\/(.*?)\/?$/);
-      const category = pathnameMatches
-        ? getCategoryName(pathnameMatches[1])
-        : undefined;
+      const pathParts = location.pathname.split("/");
+      const category = getCategoryName(pathParts[2]);
 
-      const {
-        query = "",
-        page = 1,
-        locations = [],
-        subcategory,
-      } = qsModule.parse(location.search.slice(1));
+      const parsed = qsModule.parse(location.search.slice(1), {
+        arrayFormat: "repeat",
+        parseNumbers: false,
+      });
+
+      // Ensure consistent array handling for both parameters
+      const locations = Array.isArray(parsed.locations)
+        ? parsed.locations
+        : parsed.locations
+        ? [parsed.locations]
+        : [];
+
+      const subcategory = Array.isArray(parsed.subcategory)
+        ? parsed.subcategory
+        : parsed.subcategory
+        ? [parsed.subcategory]
+        : [];
 
       return {
-        query: query,
-        page: Number(page),
-        locations: Array.isArray(locations) ? locations : [locations],
-        subcategory:
-          subcategory && subcategory.length > 0
-            ? Array.isArray(subcategory)
-              ? subcategory
-              : [subcategory]
-            : undefined, // Ensure undefined if empty
+        query: parsed.query || "",
+        page: Number(parsed.page || 1),
+        locations,
+        subcategory,
         category,
       };
     },
   }),
 
   stateMapping: {
-    // This is now correctly placed as a sibling to `router`
-    stateToRoute(uiState) {
+    stateToRoute(uiState: SearchUiState) {
       const indexUiState = uiState["used-objects"] || {};
+      const refinementList = indexUiState.refinementList || {};
+
+      console.log("stateToRoute - full state:", {
+        uiState,
+        refinementList,
+        category_hierarchy: refinementList.category_hierarchy,
+      });
 
       return {
-        query: indexUiState.query,
-        page: indexUiState.page,
-        locations: indexUiState.refinementList?.town,
-        subcategory: indexUiState.refinementList?.category_hierarchy?.length
-          ? indexUiState.refinementList.category_hierarchy.map(
-              (item) => item.split(" > ")[1]
-            )
-          : undefined, // Exclude empty subcategories
-      };
-    },
-
-    routeToState(routeState) {
-      return {
-        "used-objects": {
-          query: routeState.query,
-          page: routeState.page,
-          refinementList: {
-            town: routeState.locations,
-            category_hierarchy: routeState.subcategory?.map(
-              (sub) => `Category > ${sub}`
-            ),
-          },
-        },
+        locations: refinementList.town || [],
+        subcategory: (refinementList.category_hierarchy || []).map((cat) => {
+          console.log("Processing category:", cat);
+          return cat.split(" > ")[1];
+        }),
       };
     },
   },
 };
-
 function InfiniteHits() {
   const { hits, hasMore, refineNext, isLoading } = useInfiniteHits<Hit>(); // Use generic type <Hit>
   const [isEndReached, setEndReached] = useState(false);
@@ -451,17 +414,93 @@ function InfiniteHits() {
     </div>
   );
 }
+
+type SearchUiState = {
+  "used-objects": UsedObjectsUiState;
+};
+
+interface UsedObjectsUiState {
+  refinementList: {
+    town?: string[];
+    category_hierarchy?: string[];
+  };
+}
+
 export default function BrowseView({
   category,
   initialSubcategory = null,
   initialLocation = null,
 }: BrowseViewProps) {
+  // Track mounting for debugging
+  const mountRef = useRef(0);
+
+  useEffect(() => {
+    mountRef.current += 1;
+    console.log(`BrowseView mount #${mountRef.current}`, {
+      category,
+      initialSubcategory,
+      initialLocation,
+    });
+  }, [category, initialSubcategory, initialLocation]);
+
+  const searchConfig = useMemo(
+    () => ({
+      searchClient,
+      indexName: "used-objects",
+      routing: {
+        stateMapping: {
+          stateToRoute(uiState) {
+            const indexUiState = uiState["used-objects"] || {};
+            const refinementList = indexUiState.refinementList || {};
+
+            return {
+              query: indexUiState.query || "",
+              page: indexUiState.page || 1,
+              locations: refinementList.town || [],
+              subcategory: refinementList.category_hierarchy
+                ? refinementList.category_hierarchy.map(
+                    (cat) => cat.split(" > ")[1]
+                  )
+                : [],
+            };
+          },
+
+          routeToState(routeState) {
+            const refinementList = {
+              town: routeState.locations || [],
+              category_hierarchy: (routeState.subcategory || []).map(
+                (sub) => `Category > ${sub}`
+              ),
+            };
+
+            return {
+              "used-objects": {
+                query: routeState.query || "",
+                page: routeState.page || 1,
+                refinementList,
+              },
+            };
+          },
+        },
+      },
+      initialUiState: {
+        "used-objects": {
+          query: "",
+          page: 1,
+          refinementList: {
+            town: initialLocation ? [initialLocation] : [],
+            category_hierarchy: initialSubcategory
+              ? [`Category > ${initialSubcategory}`]
+              : [],
+          },
+        },
+      },
+    }),
+    [category, initialSubcategory, initialLocation]
+  );
+
   return (
-    <InstantSearch
-      searchClient={searchClient}
-      indexName="used-objects"
-      routing={routing}
-    >
+    <InstantSearch {...searchConfig}>
       <Configure
         filters={`category_hierarchy:"${category}"`}
         hitsPerPage={20}
@@ -474,3 +513,61 @@ export default function BrowseView({
     </InstantSearch>
   );
 }
+
+/*export default function BrowseView({
+  category,
+  initialSubcategory = null,
+  initialLocation = null,
+}: BrowseViewProps) {
+  const isFirstRender = useRef(true);
+
+  // Create configuration for InstantSearch with both location and subcategory
+  const searchConfig = useMemo(
+    () => ({
+      searchClient,
+      indexName: "used-objects",
+      routing,
+      initialUiState: isFirstRender.current
+        ? {
+            "used-objects": {
+              refinementList: {
+                town: initialLocation ? [initialLocation] : [],
+                category_hierarchy: initialSubcategory
+                  ? [`Category > ${initialSubcategory}`]
+                  : [],
+              },
+            },
+          }
+        : undefined,
+    }),
+    [initialLocation, initialSubcategory]
+  );
+
+  // Basic configuration that doesn't interfere with refinements
+  const baseConfig = useMemo(
+    () => ({
+      filters: `category_hierarchy:"${category}"`,
+      hitsPerPage: 20,
+    }),
+    [category]
+  );
+
+  // Track if this is first render
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+    }
+  }, []);
+
+  return (
+    <InstantSearch<SearchUiState> {...searchConfig}>
+      <SearchContent
+        category={category}
+        initialSubcategory={initialSubcategory}
+        initialLocation={initialLocation}
+      />
+      <Configure {...baseConfig} />
+    </InstantSearch>
+  );
+}
+*/

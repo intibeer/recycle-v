@@ -2,7 +2,7 @@ import { fetchUniqueTowns } from '@/lib/locations';
 import { slugify } from '@/lib/slugify'; // Adjust the import path
 
 export async function GET() {
-  let locations_subdir=`` // leave blank, or eg locations/ for recycle.co.uk/locations/london etc
+  const locations_subdir=`` // leave blank, or eg locations/ for recycle.co.uk/locations/london etc
   const baseUrl = process.env.ROOT_DOMAIN; // Ensure this is correctly set in your .env
 
   try {

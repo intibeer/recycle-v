@@ -2,7 +2,7 @@
 import { Metadata } from "next";
 import { siteConfig } from "@/config/site";
 import { fetchBrowseItemsWithFacets } from "@/lib/browseSearch";
-import { generateJsonLd } from './json-ld';
+import { generateJsonLd } from "./json-ld";
 
 export const revalidate = 3600;
 
@@ -16,7 +16,7 @@ export async function generateMetadata({
     null,
     null
   );
-  
+
   return {
     title: `Second Hand ${
       params.category.charAt(0).toUpperCase() + params.category.slice(1)
@@ -38,26 +38,29 @@ export async function generateMetadata({
 export default async function CategoryLayout({
   children,
   params,
-  searchParams = {},  // Add default empty object
+  searchParams,
 }: {
   children: React.ReactNode;
   params: { category: string };
-  searchParams?: { [key: string]: string | string[] | undefined };  // Correct type
+  searchParams?: { [key: string]: string | string[] | undefined };
 }) {
-  // Get searchParams values safely
-  const subcategory = typeof searchParams.subcategory === 'string' ? searchParams.subcategory : null;
-  const location = typeof searchParams.location === 'string' ? searchParams.location : null;
+  // Get searchParams values safely using first array item if array
+  const subcategory = Array.isArray(searchParams?.subcategory)
+    ? searchParams.subcategory[0]
+    : searchParams?.subcategory || null;
 
-  // Generate the JSON-LD markup
-  const jsonLd = await generateJsonLd(
-    params.category,
-    subcategory,
-    location
-  );
+  const location = Array.isArray(searchParams?.location)
+    ? searchParams.location[0]
+    : searchParams?.location || null;
+
+  const jsonLd = await generateJsonLd(params.category, subcategory, location);
 
   return (
     <>
-      {jsonLd}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {children}
     </>
   );

@@ -7,7 +7,7 @@ export async function generateJsonLd(
   selectedSubcategory: string | null,
   location: string | null
 ) {
-  const { items, total } = await fetchBrowseItemsWithFacets(
+  const { items } = await fetchBrowseItemsWithFacets(
     categoryParam,
     selectedSubcategory,
     location

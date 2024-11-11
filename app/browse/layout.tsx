@@ -1,7 +1,6 @@
 // app/browse/layout.tsx
 import { Metadata } from "next";
 import { siteConfig } from "@/config/site";
-import { fetchBrowseIndexWithFacets } from "@/lib/browseSearch";
 import { generateJsonLd } from './json-ld';
 
 export const revalidate = 3600;
