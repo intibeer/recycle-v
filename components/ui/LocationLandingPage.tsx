@@ -4,6 +4,8 @@ import { searchClient } from "@/lib/algolia";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
 import Link from "next/link";
+import qs from "qs"; // Make sure this is imported
+
 
 interface Hit {
   objectID: string;
@@ -50,20 +52,35 @@ interface LocationLandingPageProps {
 }
 
 function RefineSearchButton({ category, location }: { category: string, location: string }) {
-  const searchUrl = `/browse/${category}?locations=${encodeURIComponent(location)}`;
+    // Create the URL with the correct query string format
+    const queryString = qs.stringify(
+      {
+        query: '',
+        page: 1,
+        locations: [location], // This will be properly formatted as locations[0]=london
+      },
+      {
+        addQueryPrefix: true,
+        arrayFormat: 'indices',  // This formats arrays as locations[0], locations[1], etc.
+        encodeValuesOnly: true,  // Only encode the values, not the keys
+      }
+    );
+    
+    const searchUrl = `/browse/${category}${queryString}`;
+    
+    return (
+      <Link href={searchUrl}>
+        <Button 
+          size="lg" 
+          className="w-full md:w-auto flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-6"
+        >
+          <Search className="w-5 h-5" />
+          Refine Your Search
+        </Button>
+      </Link>
+    );
+  }
   
-  return (
-    <Link href={searchUrl}>
-      <Button 
-        size="lg" 
-        className="w-full md:w-auto flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-6"
-      >
-        <Search className="w-5 h-5" />
-        Refine Your Search
-      </Button>
-    </Link>
-  );
-}
 
 export default function LocationLandingPage({
   category,

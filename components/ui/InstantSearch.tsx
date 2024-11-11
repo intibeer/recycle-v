@@ -1,5 +1,5 @@
 import { useMemo, useRef } from "react";
-import { RefinementListProps } from 'react-instantsearch'; 
+import { RefinementListProps } from "react-instantsearch";
 
 import {
   InstantSearch,
@@ -71,14 +71,15 @@ function Hit({ hit }: { hit: Hit }) {
     </a>
   );
 }
-
 function TitleSection({
   category,
   initialSubcategory,
+  initialLocation,
   setFiltersOpen,
 }: {
   category: string;
   initialSubcategory: string | null;
+  initialLocation: string | null;
   setFiltersOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   const { results } = useInstantSearch();
@@ -88,10 +89,19 @@ function TitleSection({
   });
   const { refine: clearAll } = useClearRefinements();
 
-  // Get selected locations
-  const selectedLocations = locationItems
-    .filter((item) => item.isRefined)
-    .map((item) => item.label);
+  // Get selected locations, including initial location
+  const selectedLocations = useMemo(() => {
+    const refinedLocations = locationItems
+      .filter((item) => item.isRefined)
+      .map((item) => item.label);
+
+    // If we have an initial location and it's not already in the refined locations
+    if (initialLocation && !refinedLocations.includes(initialLocation)) {
+      return [initialLocation, ...refinedLocations];
+    }
+
+    return refinedLocations;
+  }, [locationItems, initialLocation]);
 
   // Get selected subcategories
   const selectedSubcategories = categoryItems
@@ -169,7 +179,6 @@ function SearchContent({
     searchablePlaceholder: "Search types...",
     operator: "or",
   };
-
 
   // Common class names for refinement lists
   const refinementClassNames = {
@@ -282,19 +291,23 @@ export const routing = {
   router: history({
     parseURL({ qsModule, location }) {
       const parsedParams = qsModule.parse(location.search.slice(1), {
-        arrayFormat: 'bracket',  // This handles subcategory[0], subcategory[1] format
+        arrayFormat: "bracket", // This handles subcategory[0], subcategory[1] format
         parseNumbers: false,
       });
 
       return {
-        query: parsedParams.query || '',
+        query: parsedParams.query || "",
         page: Number(parsedParams.page || 1),
-        locations: Array.isArray(parsedParams.locations) 
-          ? parsedParams.locations 
-          : parsedParams.locations ? [parsedParams.locations] : [],
+        locations: Array.isArray(parsedParams.locations)
+          ? parsedParams.locations
+          : parsedParams.locations
+          ? [parsedParams.locations]
+          : [],
         subcategory: Array.isArray(parsedParams.subcategory)
           ? parsedParams.subcategory
-          : parsedParams.subcategory ? [parsedParams.subcategory] : [],
+          : parsedParams.subcategory
+          ? [parsedParams.subcategory]
+          : [],
       };
     },
 
@@ -307,7 +320,7 @@ export const routing = {
       };
 
       const queryString = qsModule.stringify(queryParams, {
-        arrayFormat: 'bracket',
+        arrayFormat: "bracket",
         addQueryPrefix: true,
         encode: true,
       });
@@ -425,6 +438,8 @@ interface UsedObjectsUiState {
     category_hierarchy?: string[];
   };
 }
+const normalizeLocation = (location: string) =>
+  location.charAt(0).toUpperCase() + location.slice(1).toLowerCase();
 
 export default function BrowseView({
   category,
@@ -453,10 +468,15 @@ export default function BrowseView({
             const indexUiState = uiState["used-objects"] || {};
             const refinementList = indexUiState.refinementList || {};
 
+            // Normalize case when converting state to route
+            const locations = (refinementList.town || []).map(
+              normalizeLocation
+            );
+
             return {
               query: indexUiState.query || "",
               page: indexUiState.page || 1,
-              locations: refinementList.town || [],
+              locations,
               subcategory: refinementList.category_hierarchy
                 ? refinementList.category_hierarchy.map(
                     (cat) => cat.split(" > ")[1]
@@ -464,15 +484,18 @@ export default function BrowseView({
                 : [],
             };
           },
-
           routeToState(routeState) {
+            // Normalize case when converting route to state
+            const locations = (routeState.locations || []).map(
+              normalizeLocation
+            );
+
             const refinementList = {
-              town: routeState.locations || [],
+              town: locations,
               category_hierarchy: (routeState.subcategory || []).map(
                 (sub) => `Category > ${sub}`
               ),
             };
-
             return {
               "used-objects": {
                 query: routeState.query || "",
@@ -488,7 +511,8 @@ export default function BrowseView({
           query: "",
           page: 1,
           refinementList: {
-            town: initialLocation ? [initialLocation] : [],
+            // Normalize case in initial state
+            town: initialLocation ? [normalizeLocation(initialLocation)] : [],
             category_hierarchy: initialSubcategory
               ? [`Category > ${initialSubcategory}`]
               : [],
