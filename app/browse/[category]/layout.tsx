@@ -13,11 +13,7 @@ export async function generateMetadata({
   params: { category: string };
 }): Promise<Metadata> {
   const category = slugToCategory(params.category);
-  const { total } = await fetchBrowseItemsWithFacets(
-    category,
-    null,
-    null
-  );
+  const { total } = await fetchBrowseItemsWithFacets(category, null, null);
 
   return {
     title: `Second Hand ${category} | ${siteConfig.name}`,
@@ -43,11 +39,11 @@ export default async function CategoryLayout({
   searchParams?: { [key: string]: string | string[] | undefined };
 }) {
   if (!isValidCategorySlug(params.category)) {
-    throw new Error('Invalid category slug');
+    throw new Error("Invalid category slug");
   }
 
   const category = slugToCategory(params.category);
-  
+
   // Get searchParams values safely using first array item if array
   const subcategory = Array.isArray(searchParams?.subcategory)
     ? searchParams.subcategory[0]

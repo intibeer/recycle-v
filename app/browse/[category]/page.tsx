@@ -9,6 +9,7 @@ import {
 import { useMemo, useRef, useEffect, useState } from "react";
 import { slugToCategory } from "@/lib/categoryToSlug";
 
+
 export default function CategoryPage() {
   const params = useParams();
   const searchParams = useSearchParams();

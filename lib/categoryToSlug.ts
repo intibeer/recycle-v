@@ -19,7 +19,7 @@ export function slugToCategory(slug: string): string {
     .split('-')
     .map(word => {
       // Special case for "and"
-      if (word.toLowerCase() === 'and') return '&';
+      //if (word.toLowerCase() === 'and') return '&';
       // Capitalize first letter of each word
       return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
     })
