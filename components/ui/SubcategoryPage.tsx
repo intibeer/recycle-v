@@ -71,16 +71,6 @@ function RefineSearchButton({
 }) {
   const { items } = useRefinementList({ attribute: "category_hierarchy" });
 
-  const formattedSubcategory = subcategory
-    .split("-")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-
-  const formattedCategory =
-    category.charAt(0).toUpperCase() + category.slice(1);
-  const formattedLocation =
-    location.charAt(0).toUpperCase() + location.slice(1);
-
   const queryString = qs.stringify(
     {
       query: "",
@@ -150,8 +140,10 @@ export default function SubcategoryPage({
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 
-  const formattedCategory =
-    category.charAt(0).toUpperCase() + category.slice(1);
+  const formattedCategory = category
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
   const formattedLocation =
     location.charAt(0).toUpperCase() + location.slice(1);
 
