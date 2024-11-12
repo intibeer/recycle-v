@@ -1,7 +1,7 @@
 // app/browse/json-ld.tsx
 import { siteConfig } from '@/config/site';
 import { fetchBrowseIndexWithFacets } from "@/lib/browseSearch";
-
+import { slugify } from '@/lib/slugify';
 export async function generateJsonLd() {
  const { categories } = await fetchBrowseIndexWithFacets();
 
@@ -11,7 +11,7 @@ export async function generateJsonLd() {
    "itemListElement": categories.map((category, index) => ({
      "@type": "ListItem",
      "position": index,
-     "url": `${siteConfig.url}/browse/${encodeURIComponent(category.name.toLowerCase())}`,
+     "url": `${siteConfig.url}/browse/${slugify(category.name)}`,
      "name": `${category.name} (${category.count} items)`
    }))
  };
