@@ -4,10 +4,10 @@ import { Facebook } from "lucide-react";
 
 const popularCategories = [
   { name: "Furniture", href: "/browse/furniture" },
-  { name: "Baby & Kids", href: "/browse/baby-kids" },
-  { name: "Sports & Leisure", href: "/browse/sports-leisure" },
+  { name: "Baby & Kids", href: "/browse/baby-and-kids" },
+  { name: "Sports & Leisure", href: "/browse/sports-and-leisure" },
   { name: "Home Décor", href: "/browse/home-decor" },
-  { name: "Garden & Outdoor", href: "/browse/garden-outdoor" },
+  { name: "Garden & Outdoor", href: "/browse/garden-and-outdoor" },
 ];
 
 const locations = [
@@ -36,32 +36,45 @@ export default function Footer() {
                     className="text-gray-600 hover:text-gray-900 flex justify-between items-center"
                   >
                     <span>{category.name}</span>
-                   
                   </Link>
                 </li>
               ))}
             </ul>
           </div>
-
           {/* Browse By Location */}
+         
           <div>
             <h3 className="font-semibold text-gray-900 mb-4">
               Browse By Location
             </h3>
             <ul className="space-y-2">
-              {locations.map((location) => (
-                <li key={location.href}>
-                  <Link
-                    href={location.href}
-                    className="text-gray-600 hover:text-gray-900"
-                  >
-                    {location.name}
-                  </Link>
-                </li>
-              ))}
+              <li>
+                <Link
+                  href="/browse/furniture/london"
+                  className="text-gray-600 hover:text-gray-900"
+                >
+                  Used furniture in London
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/browse/furniture/manchester"
+                  className="text-gray-600 hover:text-gray-900"
+                >
+                  Used furniture in Manchester
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/browse/furniture/kent"
+                  className="text-gray-600 hover:text-gray-900"
+                >
+                  Used furniture in Kent
+                </Link>
+              </li>
             </ul>
           </div>
-
+          
           {/* Legal & Social */}
           <div>
             <h3 className="font-semibold text-gray-900 mb-4">Information</h3>
