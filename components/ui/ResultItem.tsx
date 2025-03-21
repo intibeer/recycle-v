@@ -1,15 +1,8 @@
 import { useRouter } from "next/navigation"; // Import Next.js router for client-side navigation
-import { MapPin, ExternalLink } from "lucide-react";
+import { MapPin, Calendar, ExternalLink } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+
 import {
   Marketplaces,
   ResultItem as ResultItemType,
@@ -28,67 +21,115 @@ export function ResultItem({ item, marketplaces }: ResultItemProps) {
     router.push(`/item/${item.objectID}`); // Navigate to /item/[id] dynamically
   };
 
+  // Handle external link click without triggering the card click
+  const handleExternalLinkClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent the card click from firing
+    if (item.url) {
+      window.open(item.url, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  // Format the date if available
+  const formattedDate = item.date ? new Date(item.date).toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  }) : null;
+
+  // Format price function
+  const formatPrice = () => {
+    // If price is already a number, just format it
+    if (typeof item.price === "number") {
+      return item.price === 0 ? "Free" : `£${Math.round(item.price)}`;
+    }
+
+    // If price is a string
+    if (typeof item.price === "string") {
+      // Check for 'Free' or empty string
+      if (!item.price || item.price.toLowerCase() === "free") {
+        return "Free";
+      }
+
+      // Remove pound signs and try to parse
+      const cleanPrice = item.price.replace(/£/g, "").trim();
+      const parsedPrice = parseFloat(cleanPrice);
+
+      // If we can parse it to a number
+      if (!isNaN(parsedPrice)) {
+        return parsedPrice === 0
+          ? "Free"
+          : `£${Math.round(parsedPrice)}`;
+      }
+    }
+
+    // Default case if we can't parse the price
+    return "Free";
+  };
+
   return (
     <Card
-      className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
+      className="overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-gray-200"
       onClick={handleNavigateToItem} // Attach click handler to the entire card
     >
       <div className="relative">
-        <img
-          src={item.image_url ? item.image_url : "/placeholder.svg"}
-          alt={item.name}
-          className="w-full h-48 object-cover"
-        />
+        <div className="w-full h-48 overflow-hidden">
+          <img
+            src={item.image_url ? item.image_url : "/placeholder.svg"}
+            alt={item.name}
+            className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+          />
+        </div>
+        
+        {formatPrice() === "Free" ? (
+          <Badge className="absolute top-2 left-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-3 py-1">
+            FREE
+          </Badge>
+        ) : (
+          <Badge className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-3 py-1">
+            {formatPrice()}
+          </Badge>
+        )}
+        
         {item.distance && (
-          <div className="absolute top-2 right-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded-full text-base">
+          <Badge className="absolute top-2 right-2 bg-gray-800 hover:bg-gray-900 text-white px-2 py-1">
             {`${Math.round(item.distance)} km`}
-          </div>
+          </Badge>
         )}
       </div>
       <CardContent className="p-4">
-        <h3 className="font-semibold text-lg mb-2">{item.name}</h3>
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-xl font-bold">
-            {(() => {
-              // If price is already a number, just format it
-              if (typeof item.price === "number") {
-                return item.price === 0 ? "Free" : `£${Math.round(item.price)}`;
-              }
-
-              // If price is a string
-              if (typeof item.price === "string") {
-                // Check for 'Free' or empty string
-                if (!item.price || item.price.toLowerCase() === "free") {
-                  return "Free";
-                }
-
-                // Remove pound signs and try to parse
-                const cleanPrice = item.price.replace(/£/g, "").trim();
-                const parsedPrice = parseFloat(cleanPrice);
-
-                // If we can parse it to a number
-                if (!isNaN(parsedPrice)) {
-                  return parsedPrice === 0
-                    ? "Free"
-                    : `£${Math.round(parsedPrice)}`;
-                }
-              }
-
-              // Default case if we can't parse the price
-              return "Free";
-            })()}
-          </span>
+        <h3 className="font-semibold text-lg mb-2 line-clamp-2 h-14">{item.name}</h3>
+        
+        <div className="flex flex-col space-y-2 text-sm text-gray-600">
+          <div className="flex items-center">
+            <MapPin className="w-4 h-4 mr-2 text-gray-500" />
+            <span className="truncate">{item.location}</span>
+          </div>
+          
+          {formattedDate && (
+            <div className="flex items-center">
+              <Calendar className="w-4 h-4 mr-2 text-gray-500" />
+              <span>{formattedDate}</span>
+            </div>
+          )}
         </div>
-        <div className="flex items-center text-base text-gray-500">
-          <MapPin className="w-4 h-4 mr-1" />
-          {item.location}
-        </div>
-        <div className="mt-2 flex justify-end">
+        
+        <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center">
           <img
             src={`/${marketplaces[item.site]?.logo}`}
             alt={item.site}
-            className="pr-2 h-6 grayscale contrast-200 brightness-0"
+            className="h-5"
           />
+          
+          {item.url && (
+            <Badge 
+              variant="outline" 
+              className="flex items-center gap-1 text-xs cursor-pointer hover:bg-gray-100"
+              onClick={handleExternalLinkClick}
+            >
+              <ExternalLink className="w-3 h-3" />
+              View
+            </Badge>
+          )}
         </div>
       </CardContent>
     </Card>

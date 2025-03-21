@@ -26,8 +26,10 @@ export function ResultsList({
 
   if (loading) {
     return (
-      <div className="flex justify-center">
-        <img src="/loading-spinner.gif" width={100} height={100} alt="Loading..." />
+      <div className="flex justify-center items-center py-12">
+        <div className="animate-pulse">
+          <img src="/placeholder.svg" width={120} height={120} alt="Loading..." className="opacity-70" />
+        </div>
       </div>
     );
   }
@@ -35,8 +37,8 @@ export function ResultsList({
   if (hasSearched && filteredResults.length === 0) {
     return (
       <div className="text-center py-8">
-        <h2 className="text-2xl font-bold mb-4">No results found</h2>
-        <p className="text-gray-600 mb-4">Please try a different search or adjust your filters.</p>
+        <h2 className="text-2xl font-bold mb-4">No results found :(</h2>
+        <p className="text-gray-600 mb-4">Go again with a new search.</p>
       </div>
     );
   }
@@ -50,7 +52,7 @@ export function ResultsList({
           </h2>
           <SortDropdown sortOption={sortOption} setSortOption={setSortOption} />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
           {filteredResults.map((item) => (
             <ResultItem key={item.objectID} item={item} marketplaces={marketplaces} />
           ))}

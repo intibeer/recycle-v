@@ -1,42 +1,61 @@
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronUp } from 'lucide-react';
-import { Marketplaces } from '@/hooks/used-object-search';
+import { cn } from "@/lib/utils";
+import { Marketplaces } from "@/hooks/used-object-search";
+import { ChevronDown } from 'lucide-react';
 
-type MarketplaceFilterProps = {
+
+interface MarketplaceFilterProps {
   marketplaces: Marketplaces;
   handleMarketplaceChange: (marketplace: string) => void;
-};
+  className?: string;
+}
 
-export function MarketplaceFilter({ marketplaces, handleMarketplaceChange }: MarketplaceFilterProps) {
+export function MarketplaceFilter({
+  marketplaces,
+  handleMarketplaceChange,
+  className
+}: MarketplaceFilterProps) {
+  const handleClick = (e: React.MouseEvent, site: string) => {
+    e.preventDefault();  // Prevent form submission
+    handleMarketplaceChange(site);
+  };
+
   return (
-    <Collapsible defaultOpen={true}>
-      <CollapsibleTrigger asChild>
-        <Button variant="outline" className="w-full mb-2">
-          <ChevronUp className="w-4 h-4 mr-2" />
-          Marketplaces
-        </Button>
-      </CollapsibleTrigger>
-      <CollapsibleContent>
-        <div className="grid grid-cols-2 gap-4 mt-4">
-          {Object.entries(marketplaces).map(([name, { selected, logo }]) => (
-            <div key={name} className="flex items-center space-x-2 ">
-              <Checkbox
-                id={name}
-                checked={selected}
-                onCheckedChange={() => handleMarketplaceChange(name)}
-                className='text-white'
+    <div className={cn(
+      "marketplace-filter-container bg-gray-50 p-4 rounded-md transition-all duration-300 relative group",
+      className
+    )}>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold text-gray-700">Where to look</h3>
+          <ChevronDown className="w-4 h-4 text-gray-500" />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          {Object.entries(marketplaces).map(([site, { selected, logo }]) => (
+            <button
+              key={site}
+              type="button"  // Explicitly set button type to prevent form submission
+              onClick={(e) => handleClick(e, site)}
+              className={cn(
+                "flex items-center gap-2 px-4 py-3 rounded-md transition-all duration-300 hover:shadow-md",
+                "transform hover:scale-102 active:scale-98 max-w-fit",
+                selected 
+                  ? "bg-custom-green text-white hover:bg-custom-green/90" 
+                  : "bg-white text-gray-700 hover:bg-gray-100"
+              )}
+            >
+              <img 
+                src={`/${logo}`} 
+                alt={site} 
+                className={cn(
+                  "w-6 h-6 object-contain transition-all duration-300",
+                  selected ? "brightness-100" : "brightness-75"
+                )} 
               />
-              <img src={`/${logo}`} alt={name} className="h-6 grayscale contrast-200 brightness-0" />
-              <Label htmlFor={name} className="hidden">
-                {name}
-              </Label>
-            </div>
+              <span className="text-sm font-medium">{site.split('.')[0]}</span>
+            </button>
           ))}
         </div>
-      </CollapsibleContent>
-    </Collapsible>
+      </div>
+    </div>
   );
 }

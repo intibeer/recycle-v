@@ -1,0 +1,73 @@
+@keyframes typing {
+  from { width: 0 }
+  to { width: 100% }
+}
+
+@keyframes blink {
+  from, to { border-color: transparent }
+  50% { border-color: #328665 }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.type-out {
+  width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  border-right: 2px solid #328665;
+  animation: typing 3s steps(40) forwards,
+             blink 0.75s step-end infinite;
+}
+
+.shimmer {
+  text-shadow: 0 0 10px rgba(255,255,255,0.3);
+}
+
+.recycle-symbol-1 {
+  position: absolute;
+  top: 10%;
+  left: 10%;
+  font-size: 2rem;
+  animation: float 6s ease-in-out infinite, rotate 10s linear infinite;
+}
+
+.recycle-symbol-2 {
+  position: absolute;
+  top: 20%;
+  right: 15%;
+  font-size: 2.5rem;
+  animation: float 8s ease-in-out infinite, rotate 15s linear infinite;
+}
+
+.recycle-symbol-3 {
+  position: absolute;
+  bottom: 15%;
+  left: 20%;
+  font-size: 3rem;
+  animation: float 7s ease-in-out infinite, rotate 12s linear infinite;
+}
+
+.group:hover::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    100px circle at 251px 26px,
+    var(--emerald-800),
+    transparent 80%
+  );
+  pointer-events: none;
+  border-radius: 0.375rem; /* matches rounded-md */
+}
+
+:root {
+  --emerald-800: rgb(6 95 70 / 0.25);
+} 

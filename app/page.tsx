@@ -73,7 +73,7 @@ const Home: React.FC = () => {
 
       {isVisible && (
         <div className="fixed bottom-4 right-4 z-50">
-          <div className="relative rounded-full shadow-lg p-2">
+          <div className="relative">
             <button 
               className="absolute top-0 right-0 bg-gray-200 rounded-full transform translate-x-1/2 -translate-y-1/2"
               onClick={handleClose}
@@ -84,7 +84,7 @@ const Home: React.FC = () => {
               <img
                 src="/floating.png"
                 alt="Chat with Henry"
-                className="w-12 h-12 rounded-full"
+                className="w-20 h-20 rounded-full"
               />
             </button>
           </div>
@@ -92,19 +92,21 @@ const Home: React.FC = () => {
       )}
 
       {isChatOpen && (
-        <div className="fixed bottom-20 right-4 w-80 h-96 bg-white rounded-lg shadow-xl overflow-hidden z-50">
-          <div className="flex justify-between items-center p-4 bg-gray-100">
+        <div className="fixed bottom-20 right-4 w-96 h-[700px] bg-custom-green rounded-lg shadow-xl text-white overflow-scroll z-50">
+          <div className="flex justify-between items-center p-4 ">
             <h3 className="font-semibold">Chat with Henry</h3>
             <button onClick={toggleChat}>
               <X size={20} />
             </button>
           </div>
-          <iframe
-            src="https://henry.recycle.co.uk"
-            title="Henry's Chat"
-            className="w-full h-full border-none"
-            allowFullScreen
-          />
+          <div className="w-full h-[calc(100%-56px)] overflow-scroll">
+            <iframe
+              src="https://henry.recycle.co.uk"
+              title="Henry's Chat"
+              className="w-full h-full border-none overflow-y-scroll"
+              allowFullScreen
+            />
+          </div>
         </div>
       )}
     </>
