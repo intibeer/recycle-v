@@ -92,18 +92,18 @@ const Home: React.FC = () => {
       )}
 
       {isChatOpen && (
-        <div className="fixed bottom-20 right-4 w-96 h-[700px] bg-custom-green rounded-lg shadow-xl text-white overflow-scroll z-50">
-          <div className="flex justify-between items-center p-4 ">
-            <h3 className="font-semibold">Chat with Henry</h3>
-            <button onClick={toggleChat}>
-              <X size={20} />
+        <div className="fixed bottom-0 right-0 w-full md:w-96 h-[500px] md:h-[700px] md:bottom-20 md:right-4 bg-custom-green rounded-t-lg md:rounded-lg shadow-xl text-white z-50 flex flex-col">
+          <div className="flex justify-between items-center p-4 border-b border-white/10">
+            <h3 className="font-semibold font-heading text-sm md:text-base">Chat with Henry</h3>
+            <button onClick={toggleChat} className="p-1 hover:bg-white/10 rounded-full transition-colors" aria-label="Close chat">
+              <X size={18} />
             </button>
           </div>
-          <div className="w-full h-[calc(100%-56px)] overflow-scroll">
+          <div className="flex-grow overflow-hidden">
             <iframe
               src="https://henry.recycle.co.uk"
               title="Henry's Chat"
-              className="w-full h-full border-none overflow-y-scroll"
+              className="w-full h-full border-none"
               allowFullScreen
             />
           </div>
