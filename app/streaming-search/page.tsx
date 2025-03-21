@@ -1,7 +1,10 @@
-'use client';
-
-import StreamingSearch from '@/components/ui/StreamingSearch';
+import { Suspense } from 'react';
+import StreamingSearchContent from '@/components/StreamingSearchContent';
 
 export default function StreamingSearchPage() {
-  return <StreamingSearch />;
+  return (
+    <Suspense fallback={<div className="p-8 text-center">Loading search...</div>}>
+      <StreamingSearchContent />
+    </Suspense>
+  );
 } 

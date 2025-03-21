@@ -37,18 +37,60 @@ const Home: React.FC = () => {
       <UsedObjectSearch />
       <CookieConsent
         location="bottom"
-        buttonText="Accept"
-        declineButtonText="Reject"
+        buttonText="Accept All"
+        declineButtonText="Reject All"
         enableDeclineButton
         onAccept={handleAccept}
         onDecline={handleReject}
         cookieName="userConsentForCookies"
-        style={{ background: "#ffffff", color: "black" }}
-        buttonStyle={{ color: "#fff", fontSize: "13px", borderRadius: "5px", background: "#328665" }}
-        declineButtonStyle={{ color: "#fff", fontSize: "13px", borderRadius: "5px", background: "black" }}
         expires={150}
+        overlay
+        style={{ 
+          background: "rgba(255, 255, 255, 0.95)",
+          color: "#333",
+          maxWidth: "420px",
+          padding: "1rem",
+          borderRadius: "8px",
+          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+          margin: "1rem",
+          left: "50%",
+          transform: "translateX(-50%)",
+          fontSize: "14px",
+          lineHeight: "1.5"
+        }}
+        buttonStyle={{ 
+          background: "#328665", 
+          color: "white", 
+          fontSize: "14px", 
+          borderRadius: "4px",
+          padding: "8px 16px",
+          fontWeight: "600",
+          marginTop: "12px",
+          marginRight: "8px"
+        }}
+        declineButtonStyle={{ 
+          background: "transparent", 
+          color: "#333", 
+          fontSize: "14px", 
+          borderRadius: "4px",
+          padding: "8px 16px",
+          border: "1px solid #ccc",
+          fontWeight: "600",
+          marginTop: "12px"
+        }}
+        contentStyle={{
+          margin: "0",
+          padding: "0"
+        }}
+        buttonWrapperClasses="flex flex-wrap justify-center gap-2 mt-3"
       >
-        This website uses cookies to enhance the user experience.
+        <div className="mb-3">
+          <h4 className="font-heading text-sm mb-2">Cookie Preferences</h4>
+          <p>
+            We use cookies to enhance your browsing experience, analyze site traffic, and personalize content. 
+            By clicking &quot;Accept All&quot; you consent to our use of cookies.
+          </p>
+        </div>
       </CookieConsent>
       {consent === "true" && (
         <>

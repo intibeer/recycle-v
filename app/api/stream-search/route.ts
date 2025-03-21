@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 
+
 // Sample dummy data with more items
 const dummyItems = [
   {
@@ -262,6 +263,67 @@ interface Item {
   distance?: number; // Make distance optional
 }
 
+// Update the fetchTrashNothingItems function to handle the new response format
+async function fetchTrashNothingItems(query: string, userLat?: number, userLng?: number, radius?: number): Promise<Item[]> {
+  try {
+    const url = new URL(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/trash-nothing`);
+    url.searchParams.append('query', query);
+    
+    if (userLat && userLng) {
+      url.searchParams.append('latitude', userLat.toString());
+      url.searchParams.append('longitude', userLng.toString());
+      url.searchParams.append('radius', (radius ? radius * 1000 : 10000).toString()); // Convert km to meters
+    }
+    
+    const response = await fetch(url.toString());
+    
+    if (!response.ok) {
+      console.error('Error fetching from Trash Nothing API');
+      return [];
+    }
+    
+    const data = await response.json();
+    
+    // Transform Trash Nothing data to match your Item interface
+    // The response format is different from what we expected before
+    return data.posts.map((post: any) => ({
+      objectID: post.post_id.toString(),
+      name: post.title,
+      description: post.content,
+      image_url: post.photos && post.photos.length > 0 ? post.photos[0].url : '',
+      url: post.url,
+      date: post.date.split('T')[0], // Format date from ISO string
+      time_posted: new Date(post.date).toLocaleTimeString(),
+      price: '0.00', // Most items on Trash Nothing are free
+      href: post.url,
+      location: post.location_text || extractLocationFromTitle(post.title),
+      site: 'trashnothing.com',
+      lat: post.latitude,
+      lon: post.longitude,
+      town: extractLocationFromTitle(post.title),
+      region: '',
+      country: post.country || 'United Kingdom',
+      _geoloc: {
+        lat: post.latitude,
+        lng: post.longitude,
+      },
+      // If we have user coordinates, calculate distance
+      distance: userLat && userLng ? 
+        calculateDistance(userLat, userLng, post.latitude, post.longitude) : 
+        undefined
+    }));
+  } catch (error) {
+    console.error('Error in fetchTrashNothingItems:', error);
+    return [];
+  }
+}
+
+// Helper function to extract location from title (many Trash Nothing posts include location in parentheses)
+function extractLocationFromTitle(title: string): string {
+  const locationMatch = title.match(/\(([^)]+)\)/);
+  return locationMatch ? locationMatch[1] : '';
+}
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const query = searchParams.get('query') || '';
@@ -296,6 +358,27 @@ export async function GET(request: NextRequest) {
 
       // Filter items based on search query (simple contains check)
       let filteredItems = [...dummyItems];
+      
+      // If trashnothing.com is in the sites list, fetch real data
+      if (sites.includes('trashnothing.com')) {
+        try {
+          const trashNothingItems = await fetchTrashNothingItems(
+            query, 
+            userLat || undefined, 
+            userLng || undefined,
+            radius
+          );
+          
+          // Add the real items to our filtered items
+          if (trashNothingItems.length > 0) {
+            // Replace dummy items with real ones for trashnothing.com
+            filteredItems = filteredItems.filter(item => item.site !== 'trashnothing.com');
+            filteredItems = [...filteredItems, ...trashNothingItems];
+          }
+        } catch (error) {
+          console.error('Error fetching Trash Nothing items:', error);
+        }
+      }
       
       if (query) {
         filteredItems = filteredItems.filter(item => 
