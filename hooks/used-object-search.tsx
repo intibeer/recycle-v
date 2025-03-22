@@ -105,12 +105,35 @@ export default function UsedObjectSearch({ initialCategory }: ComponentProps) {
   const handleSortChange = (newSortOption: string) => {
     if (!isBrowser) return;
     
+    console.log('Sort option changed to:', newSortOption); // Debug log
     setSortOption(newSortOption);
     
     // Update URL with new sort option
     const params = new URLSearchParams(searchParams.toString());
     params.set('sort', newSortOption);
+    
+    // Keep existing query parameters
+    if (searchTerm) params.set('query', searchTerm);
+    if (postcode) params.set('postcode', postcode);
+    params.set('radius', radius[0].toString());
+    
+    // Add selected sites to URL
+    const selectedSites = Object.keys(marketplaces)
+      .filter(site => marketplaces[site].selected)
+      .join(',');
+    if (selectedSites) params.set('sites', selectedSites);
+    
+    // Update URL
     router.push(`/?${params.toString()}`);
+    
+    // Perform new search with updated sort option
+    performStreamingSearch({
+      query: searchTerm,
+      postcode: postcode,
+      radius: radius[0],
+      marketplaces,
+      sortBy: newSortOption
+    });
   };
 
   // Update totalItems state when streamingTotalItems changes

@@ -430,17 +430,34 @@ export async function GET(request: NextRequest) {
       
       // Sort items based on sortBy parameter
       if (sortBy === 'distance' && userLat !== null && userLng !== null) {
+        console.log('Sorting by distance'); // Debug log
         filteredItems.sort((a, b) => 
           ((a as any).distance || Infinity) - ((b as any).distance || Infinity)
         );
       } else if (sortBy === 'date') {
-        filteredItems.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        console.log('Sorting by date'); // Debug log
+        filteredItems.sort((a, b) => {
+          const dateA = new Date(a.date || 0).getTime();
+          const dateB = new Date(b.date || 0).getTime();
+          return dateB - dateA;
+        });
       } else if (sortBy === 'price-low') {
-        filteredItems.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+        console.log('Sorting by price (low to high)'); // Debug log
+        filteredItems.sort((a, b) => {
+          const priceA = parseFloat(a.price?.toString().replace(/[^0-9.]/g, '') || '0');
+          const priceB = parseFloat(b.price?.toString().replace(/[^0-9.]/g, '') || '0');
+          return priceA - priceB;
+        });
       } else if (sortBy === 'price-high') {
-        filteredItems.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
+        console.log('Sorting by price (high to low)'); // Debug log
+        filteredItems.sort((a, b) => {
+          const priceA = parseFloat(a.price?.toString().replace(/[^0-9.]/g, '') || '0');
+          const priceB = parseFloat(b.price?.toString().replace(/[^0-9.]/g, '') || '0');
+          return priceB - priceA;
+        });
+      } else {
+        console.log('Using default sort (relevance)'); // Debug log
       }
-      // For 'relevance', we keep the default order or let the API handle it
 
       // Simulate streaming by sending items with a delay
       for (let i = 0; i < filteredItems.length; i++) {
