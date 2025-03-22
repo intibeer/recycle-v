@@ -1,46 +1,67 @@
-import { notFound } from 'next/navigation'
-import UsedObjectSearch from '@/hooks/used-object-search'
+import { Suspense } from 'react';
+import UsedObjectSearch from '@/hooks/used-object-search';
+import { Metadata } from 'next';
 
-// Define the categories and their corresponding URLs
-const categories = [
-  {'href': '/home-garden', 'category': 'Home & Garden'},
-  {'href': '/baby-kids-stuff', 'category': 'Baby & Kids Stuff'},
-  {'href': '/clothing', 'category': 'Clothes, Footwear & Accessories'},
-  {'href': '/sports-leisure-travel', 'category': 'Sports, Leisure & Travel'},
-  {'href': '/miscellaneous-goods', 'category': 'Random Goods'},
-  {'href': '/diy-tools-materials', 'category': 'DIY Tools & Materials'},
-  {'href': '/kitchen-appliances', 'category': 'Appliances'},
-  {'href': '/cds-dvds-games-books', 'category': 'Music, Films, Books & Games'},
-  {'href': '/computers-software', 'category': 'Computers & Software'},
-  {'href': '/phones', 'category': 'Phones, Mobile Phones & Telecoms'},
-  {'href': '/office-furniture-equipment', 'category': 'Office Furniture & Equipment'},
-  {'href': '/health-beauty', 'category': 'Health & Beauty'},
-  {'href': '/music-instruments', 'category': 'Musical Instruments & DJ Equipment'},
-  {'href': '/tv-dvd-cameras', 'category': 'TV, DVD, Blu-Ray & Videos'},
-  {'href': '/stereos-audio', 'category': 'Audio & Stereo'},
-  {'href': '/video-games-consoles', 'category': 'Video Games & Consoles'},
-  {'href': '/cameras-studio-equipment', 'category': 'Cameras, Camcorders & Studio Equipment'},
-  {'href': '/house-clearance', 'category': 'House Clearance'},
-  {'href': '/christmas-decorations', 'category': 'Christmas Decorations'},
-]
+// Define the props type for the page
+type Props = {
+  params: { category: string };
+};
 
-export function generateStaticParams() {
-  return categories.map((cat) => ({
-    category: cat.href.slice(1), // Remove the leading slash
-  }))
+// Generate metadata for SEO
+export async function generateMetadata(
+  { params }: Props,
+): Promise<Metadata> {
+  const category = params.category.replace(/-/g, ' ');
+  const formattedCategory = category
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+
+  return {
+    title: `Free ${formattedCategory} | Recycle.co.uk`,
+    description: `Find free and used ${category} near you. Recycle and reuse items from your local community.`,
+  };
 }
 
-export default function CategoryPage({ params }: { params: { category: string } }) {
-  const category = categories.find((cat) => cat.href === `/${params.category}`)
+// This function tells Next.js which paths to pre-render
+export async function generateStaticParams() {
+  // List all possible category slugs
+  const categories = [
+    'baby-kids-stuff',
+    'cameras-studio-equipment',
+    'cds-dvds-games-books',
+    'christmas-decorations',
+    'clothing',
+    'computers-software',
+    'diy-tools-materials',
+    'health-beauty',
+    'home-garden',
+    'house-clearance',
+    'kitchen-appliances',
+    'miscellaneous-goods',
+    'music-instruments',
+    'office-furniture-equipment',
+    'phones',
+    'sports-leisure-travel',
+    'stereos-audio',
+    'tv-dvd-cameras',
+    'video-games-consoles',
+  ];
 
-  if (!category) {
-    notFound()
-  }
+  return categories.map(category => ({
+    category,
+  }));
+}
 
+export default function CategoryPage({ params }: Props) {
+  // Format the category name for display
+  const categoryName = params.category.replace(/-/g, ' ');
+  
   return (
-    <div className="container mx-auto px-4 py-8 ">
-      <h1 className="mx-auto text-center text-3xl font-bold mb-6">Find Used {category.category}</h1>
-      <UsedObjectSearch initialCategory={category.category} />
-    </div>
-  )
+    <main className="min-h-screen">
+      <Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
+        <UsedObjectSearch initialCategory={categoryName} />
+      </Suspense>
+    </main>
+  );
 }

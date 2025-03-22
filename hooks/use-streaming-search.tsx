@@ -12,6 +12,9 @@ type StreamingSearchOptions = {
 };
 
 export function useStreamingSearch() {
+  // Add a check for window to avoid SSR issues
+  const isBrowser = typeof window !== 'undefined';
+  
   const [results, setResults] = useState<ResultItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
@@ -20,6 +23,9 @@ export function useStreamingSearch() {
   const eventSourceRef = useRef<EventSource | null>(null);
 
   const search = (options: StreamingSearchOptions) => {
+    // Don't attempt to search during SSR
+    if (!isBrowser) return;
+    
     // Reset state for new search
     setResults([]);
     setError(null);
@@ -98,14 +104,16 @@ export function useStreamingSearch() {
     });
   };
 
-  // Clean up on unmount
+  // Clean up on unmount - only in browser
   useEffect(() => {
+    if (!isBrowser) return;
+    
     return () => {
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
       }
     };
-  }, []);
+  }, [isBrowser]);
 
   return {
     results,

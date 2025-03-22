@@ -47,14 +47,17 @@ type ComponentProps = {
 };
 
 export default function UsedObjectSearch({ initialCategory }: ComponentProps) {
+  // Add a check for window to avoid SSR issues
+  const isBrowser = typeof window !== 'undefined';
+  
   const router = useRouter();
   const searchParams = useSearchParams();
   
-  // Get search parameters from URL
-  const urlQuery = searchParams.get('query') || '';
-  const urlPostcode = searchParams.get('postcode') || '';
-  const urlRadius = searchParams.get('radius') ? parseInt(searchParams.get('radius')) : 10;
-  const urlSort = searchParams.get('sort') || 'relevance';
+  // Get search parameters from URL (safely for SSR)
+  const urlQuery = isBrowser ? searchParams.get('query') || '' : '';
+  const urlPostcode = isBrowser ? searchParams.get('postcode') || '' : '';
+  const urlRadius = isBrowser && searchParams.get('radius') ? parseInt(searchParams.get('radius') as string) : 10;
+  const urlSort = isBrowser ? searchParams.get('sort') || 'relevance' : 'relevance';
   
   // State for search form
   const [searchTerm, setSearchTerm] = useState(initialCategory || urlQuery || '');
@@ -83,8 +86,10 @@ export default function UsedObjectSearch({ initialCategory }: ComponentProps) {
     search: performStreamingSearch 
   } = useStreamingSearch();
 
-  // Update URL when sort option changes
+  // Update URL when sort option changes - only in browser
   const handleSortChange = (newSortOption: string) => {
+    if (!isBrowser) return;
+    
     setSortOption(newSortOption);
     
     // Update URL with new sort option
@@ -100,15 +105,19 @@ export default function UsedObjectSearch({ initialCategory }: ComponentProps) {
     }
   }, [streamingTotalItems]);
 
-  // Handle scroll for sticky header
+  // Handle scroll for sticky header - only in browser
   useEffect(() => {
+    if (!isBrowser) return;
+    
     const handleScroll = () => setIsSticky(window.scrollY > 100);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [isBrowser]);
 
-  // Auto-search if URL parameters are present
+  // Auto-search if URL parameters are present - only in browser
   useEffect(() => {
+    if (!isBrowser) return;
+    
     if (urlQuery || initialCategory) {
       setHasSearched(true);
       performStreamingSearch({
@@ -119,16 +128,20 @@ export default function UsedObjectSearch({ initialCategory }: ComponentProps) {
         sortBy: urlSort
       });
     }
-  }, [urlQuery, urlPostcode, urlRadius, urlSort, initialCategory]);
+  }, [urlQuery, urlPostcode, urlRadius, urlSort, initialCategory, isBrowser]);
 
-  // Get user's location and postcode
+  // Get user's location and postcode - only in browser
   useEffect(() => {
+    if (!isBrowser) return;
+    
     fetchUserPostcode();
-  }, []);
+  }, [isBrowser]);
 
   // Handle search form submission
   const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!isBrowser) return;
+    
     setHasSearched(true);
     
     // Update URL with search parameters

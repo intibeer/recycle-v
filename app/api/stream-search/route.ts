@@ -238,8 +238,8 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
   return R * c;
 }
 
-// Define an interface for your items
-interface Item {
+// First, let's define an interface for the item with the distance property
+interface SearchItem {
   objectID: string;
   name: string;
   description: string;
@@ -260,7 +260,7 @@ interface Item {
     lat: number;
     lng: number;
   };
-  distance?: number; // Make distance optional
+  distance?: number; // Add the optional distance property
 }
 
 // Update the fetchTrashNothingItems function to handle the new response format
@@ -270,7 +270,7 @@ async function fetchTrashNothingItems(
   userLng?: number, 
   radius?: number,
   sortBy: string = 'relevance'
-): Promise<Item[]> {
+): Promise<SearchItem[]> {
   try {
     const url = new URL(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/trash-nothing`);
     url.searchParams.append('query', query);
@@ -407,25 +407,22 @@ export async function GET(request: NextRequest) {
         filteredItems = filteredItems.filter(item => sites.includes(item.site));
       }
       
-      // Add distance if we have user coordinates
+      // Calculate distance for each item if user location is provided
       if (userLat !== null && userLng !== null) {
         filteredItems = filteredItems.map(item => {
-          const distance = calculateDistance(
-            userLat as number,
-            userLng as number,
-            item._geoloc.lat,
-            item._geoloc.lng
-          );
+          const itemLat = item.lat || (item._geoloc?.lat);
+          const itemLng = item.lon || (item._geoloc?.lng);
           
-          return {
-            ...item,
-            distance
-          };
+          if (itemLat && itemLng) {
+            const distance = calculateDistance(userLat, userLng, itemLat, itemLng);
+            return { ...item, distance };
+          }
+          return item;
         });
         
         // Filter by radius if specified
         if (radius > 0) {
-          filteredItems = filteredItems.filter((item: Item) => 
+          filteredItems = filteredItems.filter((item: SearchItem) => 
             item.distance !== undefined && item.distance <= radius
           );
         }
@@ -433,7 +430,9 @@ export async function GET(request: NextRequest) {
       
       // Sort items based on sortBy parameter
       if (sortBy === 'distance' && userLat !== null && userLng !== null) {
-        filteredItems.sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
+        filteredItems.sort((a, b) => 
+          ((a as any).distance || Infinity) - ((b as any).distance || Infinity)
+        );
       } else if (sortBy === 'date') {
         filteredItems.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       } else if (sortBy === 'price-low') {
