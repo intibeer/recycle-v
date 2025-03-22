@@ -17,6 +17,7 @@ const ClientHome: React.FC = () => {
   const [consent, setConsent] = useState<string | undefined>(undefined);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
 
   // Only run client-side code after component is mounted
   useEffect(() => {
@@ -26,6 +27,10 @@ const ClientHome: React.FC = () => {
 
   const handleAccept = () => {
     setConsent("true");
+  };
+
+  const handleClose = () => {
+    setIsVisible(false);
   };
 
   const handleReject = () => {
@@ -123,6 +128,26 @@ const ClientHome: React.FC = () => {
             }}
           /> 
         </>
+      )}
+
+      {isVisible && (
+        <div className="fixed bottom-4 right-4 z-50">
+          <div className="relative">
+            <button 
+              className="absolute top-0 right-0 bg-gray-200 rounded-full transform translate-x-1/2 -translate-y-1/2"
+              onClick={handleClose}
+            >
+              <X size={16} />
+            </button>
+            <button onClick={toggleChat}>
+              <img
+                src="/floating.png"
+                alt="Chat with Henry"
+                className="w-20 h-20 rounded-full"
+              />
+            </button>
+          </div>
+        </div>
       )}
 
       {isChatOpen && (
