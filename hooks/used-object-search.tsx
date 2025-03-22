@@ -8,6 +8,7 @@ import { ResultsList } from '@/components/ui/ResultsList';
 import { useStreamingSearch } from './use-streaming-search';
 import { Filter } from 'lucide-react';
 import { SortDropdown } from '@/components/ui/SortDropdown';
+import SearchResultsJsonLd from '@/components/SearchResultsJsonLd';
 
 export type ResultItem = {
   objectID: string;
@@ -50,20 +51,23 @@ export default function UsedObjectSearch({ initialCategory }: ComponentProps) {
   // Add a check for window to avoid SSR issues
   const isBrowser = typeof window !== 'undefined';
   
+  // Add state to track if component is mounted
+  const [isMounted, setIsMounted] = useState(false);
+  
   const router = useRouter();
   const searchParams = useSearchParams();
   
   // Get search parameters from URL (safely for SSR)
-  const urlQuery = isBrowser ? searchParams.get('query') || '' : '';
-  const urlPostcode = isBrowser ? searchParams.get('postcode') || '' : '';
-  const urlRadius = isBrowser && searchParams.get('radius') ? parseInt(searchParams.get('radius') as string) : 10;
-  const urlSort = isBrowser ? searchParams.get('sort') || 'relevance' : 'relevance';
+  const urlQuery = isBrowser && isMounted ? searchParams.get('query') || '' : '';
+  const urlPostcode = isBrowser && isMounted ? searchParams.get('postcode') || '' : '';
+  const urlRadius = isBrowser && isMounted && searchParams.get('radius') ? parseInt(searchParams.get('radius') as string) : 10;
+  const urlSort = isBrowser && isMounted ? searchParams.get('sort') || 'relevance' : 'relevance';
   
-  // State for search form
-  const [searchTerm, setSearchTerm] = useState(initialCategory || urlQuery || '');
-  const [postcode, setPostcode] = useState(urlPostcode || '');
-  const [radius, setRadius] = useState([urlRadius]);
-  const [sortOption, setSortOption] = useState(urlSort);
+  // State for search form - initialize with empty values to avoid hydration mismatch
+  const [searchTerm, setSearchTerm] = useState('');
+  const [postcode, setPostcode] = useState('');
+  const [radius, setRadius] = useState([10]);
+  const [sortOption, setSortOption] = useState('relevance');
   
   // Other state
   const [marketplaces, setMarketplaces] = useState<Marketplaces>({
@@ -85,6 +89,17 @@ export default function UsedObjectSearch({ initialCategory }: ComponentProps) {
     totalItems: streamingTotalItems,
     search: performStreamingSearch 
   } = useStreamingSearch();
+
+  // Set the initial values after component mounts to avoid hydration issues
+  useEffect(() => {
+    setIsMounted(true);
+    if (isBrowser) {
+      setSearchTerm(initialCategory || urlQuery || '');
+      setPostcode(urlPostcode || '');
+      setRadius([urlRadius]);
+      setSortOption(urlSort);
+    }
+  }, [isBrowser, initialCategory, urlQuery, urlPostcode, urlRadius, urlSort]);
 
   // Update URL when sort option changes - only in browser
   const handleSortChange = (newSortOption: string) => {
@@ -330,6 +345,20 @@ export default function UsedObjectSearch({ initialCategory }: ComponentProps) {
     }
   };
 
+  // Only render the full component after mounting to avoid hydration issues
+  if (!isMounted) {
+    return (
+      <div className="max-w-7xl mx-auto p-6 space-y-8">
+        <div className="text-center py-4">
+          <div className="flex items-center justify-center gap-2">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-custom-green"></div>
+            <span className="text-custom-green font-ultra tracking-tight">Loading...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-8">
       {!initialCategory && (
@@ -400,6 +429,14 @@ export default function UsedObjectSearch({ initialCategory }: ComponentProps) {
         marketplaces={marketplaces}
         categoryName={initialCategory}
       />
+
+      {hasSearched && results.length > 0 && (
+        <SearchResultsJsonLd 
+          results={results} 
+          query={searchTerm} 
+          postcode={postcode} 
+        />
+      )}
     </div>
   );
 }

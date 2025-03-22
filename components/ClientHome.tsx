@@ -2,22 +2,31 @@
 
 import React, { useState, useEffect } from 'react';
 import CookieConsent, { getCookieConsentValue, Cookies } from "react-cookie-consent";
-import UsedObjectSearch from '@/hooks/used-object-search';
 import Script from "next/script";
 import { X } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+// Dynamically import components that might cause hydration issues
+// with SSR disabled to prevent hydration errors
+const DynamicUsedObjectSearch = dynamic(
+  () => import('@/hooks/used-object-search'),
+  { ssr: false }
+);
 
 const ClientHome: React.FC = () => {
   const [consent, setConsent] = useState<string | undefined>(undefined);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
+  // Only run client-side code after component is mounted
   useEffect(() => {
+    setIsMounted(true);
     setConsent(getCookieConsentValue());
   }, []);
 
   const handleAccept = () => {
     setConsent("true");
   };
-
 
   const handleReject = () => {
     setConsent("false");
@@ -28,9 +37,15 @@ const ClientHome: React.FC = () => {
     setIsChatOpen((prev) => !prev);
   };
 
+  // Prevent hydration errors by only rendering client components after mount
+  if (!isMounted) {
+    return null; // Return empty on first render to avoid hydration mismatch
+  }
+
   return (
     <>
-      <UsedObjectSearch />
+      <DynamicUsedObjectSearch />
+      
       <CookieConsent
         location="bottom"
         buttonText="Accept All"
@@ -88,6 +103,7 @@ const ClientHome: React.FC = () => {
           </p>
         </div>
       </CookieConsent>
+      
       {consent === "true" && (
         <>
           <Script
@@ -108,7 +124,6 @@ const ClientHome: React.FC = () => {
           /> 
         </>
       )}
-
 
       {isChatOpen && (
         <div className="fixed bottom-0 right-0 w-full md:w-96 h-[500px] md:h-[700px] md:bottom-20 md:right-4 bg-custom-green rounded-t-lg md:rounded-lg shadow-xl text-white z-50 flex flex-col">
