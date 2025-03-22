@@ -6,20 +6,23 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink, MapPin, Calendar, Clock } from 'lucide-react';
 import Image from 'next/image';
-import Link from 'next/link';
+
 
 interface StreamingSearchProps {
   query: string;
   postcode?: string;
   radius?: number;
   sites?: string[];
+  sortBy?: string;
+  onTotalItemsChange?: (total: number | null) => void;
 }
 
-const StreamingSearch: React.FC<StreamingSearchProps> = ({ query, postcode, radius, sites }) => {
+const StreamingSearch: React.FC<StreamingSearchProps> = ({ query, postcode, radius, sites, sortBy = 'relevance', onTotalItemsChange }) => {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchComplete, setSearchComplete] = useState(false);
+  const [totalItems, setTotalItems] = useState<number | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
@@ -27,6 +30,7 @@ const StreamingSearch: React.FC<StreamingSearchProps> = ({ query, postcode, radi
     setItems([]);
     setError(null);
     setSearchComplete(false);
+    setTotalItems(null);
     setLoading(true);
 
     // Close any existing connection
@@ -40,6 +44,7 @@ const StreamingSearch: React.FC<StreamingSearchProps> = ({ query, postcode, radi
     if (postcode) searchParams.append('postcode', postcode);
     if (radius) searchParams.append('radius', radius.toString());
     if (sites && sites.length > 0) searchParams.append('sites', sites.join(','));
+    if (sortBy) searchParams.append('sort', sortBy);
 
     const searchUrl = `/api/stream-search?${searchParams.toString()}`;
     
@@ -63,7 +68,16 @@ const StreamingSearch: React.FC<StreamingSearchProps> = ({ query, postcode, radi
     });
 
     // Handle search completion
-    eventSource.addEventListener('complete', () => {
+    eventSource.addEventListener('complete', (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data && typeof data.total === 'number') {
+          setTotalItems(data.total);
+        }
+      } catch (err) {
+        console.error('Error parsing completion data:', err);
+      }
+      
       setSearchComplete(true);
       setLoading(false);
       eventSource.close();
@@ -76,11 +90,16 @@ const StreamingSearch: React.FC<StreamingSearchProps> = ({ query, postcode, radi
       eventSource.close();
     });
 
+    // Notify parent component when totalItems changes
+    if (onTotalItemsChange) {
+      onTotalItemsChange(totalItems);
+    }
+
     // Clean up on unmount
     return () => {
       eventSource.close();
     };
-  }, [query, postcode, radius, sites]);
+  }, [query, postcode, radius, sites, sortBy, onTotalItemsChange]);
 
   if (error) {
     return <div className="text-red-500 p-4">{error}</div>;
@@ -103,8 +122,12 @@ const StreamingSearch: React.FC<StreamingSearchProps> = ({ query, postcode, radi
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {items.map((item) => (
-          <Card key={item.objectID} className="overflow-hidden hover:shadow-lg transition-shadow">
-            <Link href={item.url} target="_blank" rel="noopener noreferrer" className="block">
+          <Card 
+            key={item.objectID} 
+            className="overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-gray-200"
+            onClick={() => window.open(item.url, '_blank', 'noopener,noreferrer')}
+          >
+            <div className="cursor-pointer">
               <div className="aspect-video relative overflow-hidden bg-gray-100">
                 {item.image_url ? (
                   <Image 
@@ -125,32 +148,30 @@ const StreamingSearch: React.FC<StreamingSearchProps> = ({ query, postcode, radi
                 )}
                 <Badge className="absolute top-2 right-2 bg-custom-green">{item.site}</Badge>
               </div>
-            </Link>
 
-            <CardHeader className="p-4 pb-0">
-              <Link href={item.url} target="_blank" rel="noopener noreferrer" className="hover:underline">
+              <CardHeader className="p-4 pb-0">
                 <h3 className="font-medium text-lg line-clamp-2">{item.name}</h3>
-              </Link>
-            </CardHeader>
+              </CardHeader>
 
-            <CardContent className="p-4 pt-2">
-              <p className="text-gray-600 text-sm line-clamp-3 mb-2">{item.description}</p>
-              
-              <div className="flex items-center text-sm text-gray-500 mt-2">
-                <MapPin size={14} className="mr-1" />
-                <span className="truncate">{item.location}</span>
-                {item.distance !== undefined && (
-                  <span className="ml-1">({item.distance.toFixed(1)} km)</span>
-                )}
-              </div>
-              
-              <div className="flex items-center text-sm text-gray-500 mt-1">
-                <Calendar size={14} className="mr-1" />
-                <span>{item.date}</span>
-                <Clock size={14} className="ml-2 mr-1" />
-                <span>{item.time_posted}</span>
-              </div>
-            </CardContent>
+              <CardContent className="p-4 pt-2">
+                <p className="text-gray-600 text-sm line-clamp-3 mb-2">{item.description}</p>
+                
+                <div className="flex items-center text-sm text-gray-500 mt-2">
+                  <MapPin size={14} className="mr-1" />
+                  <span className="truncate">{item.location}</span>
+                  {item.distance !== undefined && (
+                    <span className="ml-1">({item.distance.toFixed(1)} km)</span>
+                  )}
+                </div>
+                
+                <div className="flex items-center text-sm text-gray-500 mt-1">
+                  <Calendar size={14} className="mr-1" />
+                  <span>{item.date}</span>
+                  <Clock size={14} className="ml-2 mr-1" />
+                  <span>{item.time_posted}</span>
+                </div>
+              </CardContent>
+            </div>
 
             <CardFooter className="p-4 pt-0 flex justify-between items-center">
               <div>
@@ -160,14 +181,15 @@ const StreamingSearch: React.FC<StreamingSearchProps> = ({ query, postcode, radi
                   <span className="font-semibold text-custom-green">Free</span>
                 )}
               </div>
-              <Link 
-                href={item.url} 
-                target="_blank" 
-                rel="noopener noreferrer"
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation(); // Stop event from bubbling up to the card
+                  window.open(item.url, '_blank', 'noopener,noreferrer');
+                }}
                 className="text-sm flex items-center text-blue-600 hover:text-blue-800"
               >
                 View <ExternalLink size={14} className="ml-1" />
-              </Link>
+              </button>
             </CardFooter>
           </Card>
         ))}
@@ -182,7 +204,11 @@ const StreamingSearch: React.FC<StreamingSearchProps> = ({ query, postcode, radi
 
       {searchComplete && items.length > 0 && (
         <div className="text-center mt-8 text-gray-600">
-          <p>Found {items.length} items</p>
+          <p>
+            {totalItems !== null 
+              ? `Showing ${items.length} of ${totalItems} items` 
+              : `Found ${items.length} items`}
+          </p>
         </div>
       )}
     </div>

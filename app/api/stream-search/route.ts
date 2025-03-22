@@ -264,7 +264,13 @@ interface Item {
 }
 
 // Update the fetchTrashNothingItems function to handle the new response format
-async function fetchTrashNothingItems(query: string, userLat?: number, userLng?: number, radius?: number): Promise<Item[]> {
+async function fetchTrashNothingItems(
+  query: string, 
+  userLat?: number, 
+  userLng?: number, 
+  radius?: number,
+  sortBy: string = 'relevance'
+): Promise<Item[]> {
   try {
     const url = new URL(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/trash-nothing`);
     url.searchParams.append('query', query);
@@ -272,8 +278,15 @@ async function fetchTrashNothingItems(query: string, userLat?: number, userLng?:
     if (userLat && userLng) {
       url.searchParams.append('latitude', userLat.toString());
       url.searchParams.append('longitude', userLng.toString());
-      url.searchParams.append('radius', (radius ? radius * 1000 : 10000).toString()); // Convert km to meters
+      url.searchParams.append('radius', (radius ? radius * 1000 : 10000).toString());
     }
+    
+    // Map our sort options to Trash Nothing API sort options
+    let apiSortBy = 'relevance';
+    if (sortBy === 'date') apiSortBy = 'date';
+    else if (sortBy === 'distance') apiSortBy = 'distance';
+    
+    url.searchParams.append('sort', apiSortBy);
     
     const response = await fetch(url.toString());
     
@@ -330,6 +343,7 @@ export async function GET(request: NextRequest) {
   const postcode = searchParams.get('postcode') || '';
   const radius = parseInt(searchParams.get('radius') || '10', 10);
   const sites = searchParams.get('sites')?.split(',') || [];
+  const sortBy = searchParams.get('sort') || 'relevance';
   
   // Get coordinates from postcode if provided
   let userLat: number | null = null;
@@ -366,7 +380,8 @@ export async function GET(request: NextRequest) {
             query, 
             userLat || undefined, 
             userLng || undefined,
-            radius
+            radius,
+            sortBy
           );
           
           // Add the real items to our filtered items
@@ -380,6 +395,7 @@ export async function GET(request: NextRequest) {
         }
       }
       
+      // Apply filtering and sorting
       if (query) {
         filteredItems = filteredItems.filter(item => 
           item.name.toLowerCase().includes(query.toLowerCase()) || 
@@ -414,20 +430,32 @@ export async function GET(request: NextRequest) {
           );
         }
       }
+      
+      // Sort items based on sortBy parameter
+      if (sortBy === 'distance' && userLat !== null && userLng !== null) {
+        filteredItems.sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
+      } else if (sortBy === 'date') {
+        filteredItems.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      } else if (sortBy === 'price-low') {
+        filteredItems.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+      } else if (sortBy === 'price-high') {
+        filteredItems.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
+      }
+      // For 'relevance', we keep the default order or let the API handle it
 
       // Simulate streaming by sending items with a delay
       for (let i = 0; i < filteredItems.length; i++) {
         const item = filteredItems[i];
         
-        // Add artificial delay to simulate real-time streaming
-        await new Promise(resolve => setTimeout(resolve, 300));
+        // Reduce the delay from 300ms to 50ms for much faster results
+        await new Promise(resolve => setTimeout(resolve, 50));
         
         // Send the item as a server-sent event
         controller.enqueue(`event: result\ndata: ${JSON.stringify(item)}\n\n`);
       }
       
-      // Send completion event
-      controller.enqueue(`event: complete\ndata: Search complete\n\n`);
+      // Send completion event with total count
+      controller.enqueue(`event: complete\ndata: ${JSON.stringify({ total: filteredItems.length })}\n\n`);
       
       // Close the stream
       controller.close();

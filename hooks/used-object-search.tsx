@@ -2,10 +2,12 @@
 'use client'
 
 import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { SearchForm } from '@/components/ui/SearchForm';
 import { ResultsList } from '@/components/ui/ResultsList';
-import SlotText from "@/components/ui/SlotText";
 import { useStreamingSearch } from './use-streaming-search';
+import { Filter } from 'lucide-react';
+import { SortDropdown } from '@/components/ui/SortDropdown';
 
 export type ResultItem = {
   objectID: string;
@@ -45,32 +47,121 @@ type ComponentProps = {
 };
 
 export default function UsedObjectSearch({ initialCategory }: ComponentProps) {
-  const [searchTerm, setSearchTerm] = useState(initialCategory || '');
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  // Get search parameters from URL
+  const urlQuery = searchParams.get('query') || '';
+  const urlPostcode = searchParams.get('postcode') || '';
+  const urlRadius = searchParams.get('radius') ? parseInt(searchParams.get('radius')) : 10;
+  const urlSort = searchParams.get('sort') || 'relevance';
+  
+  // State for search form
+  const [searchTerm, setSearchTerm] = useState(initialCategory || urlQuery || '');
+  const [postcode, setPostcode] = useState(urlPostcode || '');
+  const [radius, setRadius] = useState([urlRadius]);
+  const [sortOption, setSortOption] = useState(urlSort);
+  
+  // Other state
   const [marketplaces, setMarketplaces] = useState<Marketplaces>({
-    // 'gumtree.com': { selected: true, logo: 'gumtree.png' },
-    // 'facebook.com': { selected: true, logo: 'facebook.png' },
-    // 'ebay.co.uk': { selected: true, logo: 'ebay.png' },
-    // 'freecycle.org': { selected: true, logo: 'freecycle.png' },
     'trashnothing.com': { selected: true, logo: 'trashnothing.webp' },
-    // 'preloved.co.uk': { selected: true, logo: 'preloved.png' },
+    // Add other marketplaces as needed
   });
-
-  const [postcode, setPostcode] = useState('');
-  const [radius, setRadius] = useState([10]);
   const [isSticky, setIsSticky] = useState(false);
-  const [sortOption, setSortOption] = useState('featured');
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
-  const [isFilterOpen, setIsFilterOpen] = useState(!initialCategory);
+  const [isFilterOpen, setIsFilterOpen] = useState(!initialCategory && !urlQuery);
+  const [totalItems, setTotalItems] = useState<number | null>(null);
 
-  // Use our streaming search hook
+  // Use streaming search hook
   const { 
     results, 
     isLoading,
     error, 
     isComplete,
+    totalItems: streamingTotalItems,
     search: performStreamingSearch 
   } = useStreamingSearch();
+
+  // Update URL when sort option changes
+  const handleSortChange = (newSortOption: string) => {
+    setSortOption(newSortOption);
+    
+    // Update URL with new sort option
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('sort', newSortOption);
+    router.push(`/?${params.toString()}`);
+  };
+
+  // Update totalItems state when streamingTotalItems changes
+  useEffect(() => {
+    if (streamingTotalItems !== undefined) {
+      setTotalItems(streamingTotalItems);
+    }
+  }, [streamingTotalItems]);
+
+  // Handle scroll for sticky header
+  useEffect(() => {
+    const handleScroll = () => setIsSticky(window.scrollY > 100);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Auto-search if URL parameters are present
+  useEffect(() => {
+    if (urlQuery || initialCategory) {
+      setHasSearched(true);
+      performStreamingSearch({
+        query: urlQuery || initialCategory || '',
+        postcode: urlPostcode,
+        radius: urlRadius,
+        marketplaces,
+        sortBy: urlSort
+      });
+    }
+  }, [urlQuery, urlPostcode, urlRadius, urlSort, initialCategory]);
+
+  // Get user's location and postcode
+  useEffect(() => {
+    fetchUserPostcode();
+  }, []);
+
+  // Handle search form submission
+  const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setHasSearched(true);
+    
+    // Update URL with search parameters
+    const params = new URLSearchParams();
+    if (searchTerm) params.set('query', searchTerm);
+    if (postcode) params.set('postcode', postcode);
+    params.set('radius', radius[0].toString());
+    params.set('sort', sortOption);
+    
+    // Add selected sites to URL
+    const selectedSites = Object.keys(marketplaces)
+      .filter(site => marketplaces[site].selected)
+      .join(',');
+    if (selectedSites) params.set('sites', selectedSites);
+    
+    router.push(`/?${params.toString()}`);
+    
+    // Perform search
+    performStreamingSearch({
+      query: searchTerm,
+      postcode: postcode,
+      radius: radius[0],
+      marketplaces,
+      sortBy: sortOption
+    });
+    
+    // Close the filter panel after search
+    setIsFilterOpen(false);
+  };
+
+  // Format the query for display
+  const formattedQuery = searchTerm ? `"${searchTerm}"` : 'All items';
+  const formattedLocation = postcode ? ` near ${postcode}` : '';
 
   // Get user's location using browser geolocation API
   const getUserGeolocation = (): Promise<GeolocationPosition> => {
@@ -170,40 +261,6 @@ export default function UsedObjectSearch({ initialCategory }: ComponentProps) {
     }
   };
 
-  useEffect(() => {
-    fetchUserPostcode();
-  }, []);
-
-  useEffect(() => {
-    if (initialCategory) {
-      const customEvent = new Event('submit') as CustomEvent;
-      customEvent.preventDefault = () => {}; // Add preventDefault method
-      handleSearch(customEvent as unknown as React.FormEvent<HTMLFormElement>);
-    }
-  }, [initialCategory]);
-
-  useEffect(() => {
-    const handleScroll = () => setIsSticky(window.scrollY > 100);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setHasSearched(true);
-    
-    // Use the streaming search
-    performStreamingSearch({
-      query: searchTerm,
-      postcode: postcode,
-      radius: radius[0],
-      marketplaces
-    });
-    
-    // Close the filter panel after search
-    setIsFilterOpen(false);
-  };
-
   const handleMarketplaceChange = (marketplace: string) => {
     setMarketplaces((prev) => ({
       ...prev,
@@ -295,9 +352,28 @@ export default function UsedObjectSearch({ initialCategory }: ComponentProps) {
       {isLoading && !isComplete && results.length > 0 && (
         <div className="text-center py-4">
           <div className="flex items-center justify-center gap-2">
-          <img src="/loading-spinner.gif" alt="Loading..." className="w-10 h-10" />
-            <h3 className="text-custom-green font-ultra tracking-tight">Scavenging for used items... Found free {results.length} items...</h3>
-
+            <img src="/loading-spinner.gif" alt="Loading..." className="w-10 h-10" />
+            <h3 className="text-custom-green font-ultra tracking-tight">
+              Scavenging for used items... Found {results.length} items
+              {totalItems !== null && ` of ${totalItems}`}...
+            </h3>
+          </div>
+        </div>
+      )}
+      
+      {hasSearched && results.length > 0 && (
+        <div className="text-center py-4">
+          <div className="flex items-center justify-center gap-2">
+            <div>
+              <h1 className="text-custom-green font-ultra tracking-tight">
+                {formattedQuery}{formattedLocation}
+              </h1>
+              <p className="text-sm text-gray-500 mt-1">
+                Showing results within {radius[0]} km
+                {totalItems !== null && ` • ${totalItems} items found`}
+              </p>
+            </div>
+            
           </div>
         </div>
       )}
@@ -307,7 +383,7 @@ export default function UsedObjectSearch({ initialCategory }: ComponentProps) {
         hasSearched={hasSearched}
         results={results}
         sortOption={sortOption}
-        setSortOption={setSortOption}
+        setSortOption={handleSortChange}
         marketplaces={marketplaces}
         categoryName={initialCategory}
       />

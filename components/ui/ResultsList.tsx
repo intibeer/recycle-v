@@ -47,7 +47,7 @@ export function ResultsList({
     return (
       <div className="space-y-4 pt-4">
         <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold tracking-tight">
+          <h2 className="text-custom-green text-base font-ultra tracking-tight">
             {categoryName ? categoryName : "Search Results"}
           </h2>
           <SortDropdown sortOption={sortOption} setSortOption={setSortOption} />

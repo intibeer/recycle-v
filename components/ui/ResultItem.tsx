@@ -1,5 +1,4 @@
-import { useRouter } from "next/navigation"; // Import Next.js router for client-side navigation
-import { MapPin, Calendar, ExternalLink } from "lucide-react";
+import { MapPin, Calendar } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -14,19 +13,9 @@ type ResultItemProps = {
 };
 
 export function ResultItem({ item, marketplaces }: ResultItemProps) {
-  const router = useRouter(); // Initialize the Next.js router
-
-  // Navigate to the product-specific page on click
+  // Open the item URL in a new tab
   const handleNavigateToItem = () => {
-    router.push(`/item/${item.objectID}`); // Navigate to /item/[id] dynamically
-  };
-
-  // Handle external link click without triggering the card click
-  const handleExternalLinkClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent the card click from firing
-    if (item.url) {
-      window.open(item.url, '_blank', 'noopener,noreferrer');
-    }
+    window.open(item.url, '_blank', 'noopener,noreferrer');
   };
 
   // Format the date if available
@@ -69,7 +58,7 @@ export function ResultItem({ item, marketplaces }: ResultItemProps) {
   return (
     <Card
       className="overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-gray-200"
-      onClick={handleNavigateToItem} // Attach click handler to the entire card
+      onClick={handleNavigateToItem}
     >
       <div className="relative">
         <div className="w-full h-48 overflow-hidden">
@@ -119,17 +108,7 @@ export function ResultItem({ item, marketplaces }: ResultItemProps) {
             alt={item.site}
             className="h-5"
           />
-          
-          {item.url && (
-            <Badge 
-              variant="outline" 
-              className="flex items-center gap-1 text-xs cursor-pointer hover:bg-gray-100"
-              onClick={handleExternalLinkClick}
-            >
-              <ExternalLink className="w-3 h-3" />
-              View
-            </Badge>
-          )}
+          <span className="text-xs text-gray-500">{item.site}</span>
         </div>
       </CardContent>
     </Card>

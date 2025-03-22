@@ -6,6 +6,7 @@ export async function GET(request: NextRequest) {
   const latitude = searchParams.get('latitude');
   const longitude = searchParams.get('longitude');
   const radius = searchParams.get('radius') || '10000'; // Default 10km in meters
+  const sort = searchParams.get('sort') || 'relevance';
   
   // API key should be stored in environment variables
   const apiKey = process.env.TRASH_NOTHING_API_KEY;
@@ -35,9 +36,22 @@ export async function GET(request: NextRequest) {
       url.searchParams.append('latitude', latitude);
       url.searchParams.append('longitude', longitude);
       url.searchParams.append('radius', radius);
-      url.searchParams.append('sort_by', 'distance');
+      
+      // Only use distance sorting if we have coordinates
+      if (sort === 'distance') {
+        url.searchParams.append('sort_by', 'distance');
+      } else if (sort === 'date') {
+        url.searchParams.append('sort_by', 'date');
+      } else {
+        url.searchParams.append('sort_by', 'relevance');
+      }
     } else {
-      url.searchParams.append('sort_by', 'active');
+      // Default sort if no coordinates
+      if (sort === 'date') {
+        url.searchParams.append('sort_by', 'date');
+      } else {
+        url.searchParams.append('sort_by', 'relevance');
+      }
     }
     
     // Log the full request URL for debugging (but mask the API key)
