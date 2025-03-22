@@ -39,7 +39,16 @@ export default function Home() {
   return (
     <main className="min-h-screen">
       <JsonLd data={jsonLd} />
-      <Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
+      <Suspense fallback={
+        <div className="max-w-7xl mx-auto p-6 space-y-8">
+          <div className="text-center py-4">
+            <div className="flex items-center justify-center gap-2">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-custom-green"></div>
+              <span className="text-custom-green font-ultra tracking-tight">Loading...</span>
+            </div>
+          </div>
+        </div>
+      }>
         <ClientHome />
       </Suspense>
     </main>
