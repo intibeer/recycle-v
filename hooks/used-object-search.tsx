@@ -390,7 +390,7 @@ export default function UsedObjectSearch({ initialCategory }: ComponentProps) {
           <h1 className="bg-custom-green border-2 border-white text-white rounded-lg px-6 py-4 md:py-6 inline-block">
             <span className="animate-pulse hover:animate-none hover:text-white transition-colors duration-600">Recycle</span>.co.uk
           </h1>
-          <h2 className="text-custom-green md:text-lg tracking-tight font-ultra text-center mt-6 type-out">
+          <h2 className="text-black md:text-lg tracking-tight font-ultra text-center mt-6 type-out">
             Scavenge free & used items on the internet.
           </h2>
         </div>
